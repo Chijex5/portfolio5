@@ -1,0 +1,167 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Design tokens — see portfolio-build-plan.md §4
+ * ------------------------------------------------------------------ */
+:root {
+  --paper: #f4f1ea; /* warm off-white */
+  --ink: #14110f; /* warm near-black */
+  --ink-muted: color-mix(in oklab, var(--ink) 55%, transparent);
+  --signal: #ff4a1c; /* vermilion accent — used sparingly */
+
+  --content-max: 1600px;
+}
+
+/* Theme-ready: dark palette wired but inactive (light ships first, §12).
+   Activate later by setting data-theme="dark" on <html>. */
+[data-theme="dark"] {
+  --paper: #14110f;
+  --ink: #f4f1ea;
+  --ink-muted: color-mix(in oklab, var(--ink) 55%, transparent);
+  --signal: #ff6a42;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-signal: var(--signal);
+
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ------------------------------------------------------------------ *
+ * Lenis (smooth scroll) base styles
+ * ------------------------------------------------------------------ */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------ *
+ * Base
+ * ------------------------------------------------------------------ */
+html {
+  /* Clearance for the fixed header when the browser handles a hash jump
+     (arriving at /#work from another route). Matches HEADER.offset in
+     lib/tokens.ts, which Lenis uses for same-page anchors. */
+  scroll-padding-top: 6rem;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--signal);
+  color: var(--paper);
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------ *
+ * Component motion (CSS-only — no GSAP needed at this scale)
+ * ------------------------------------------------------------------ */
+
+/* Marquee: the track holds two copies of its content, so -50% lands the second
+   copy exactly where the first began. Duration comes from the component. */
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.marquee-track {
+  animation: marquee var(--marquee-duration, 28s) linear infinite;
+}
+
+/* Hero scroll cue: a hairline that runs down, then out the bottom. */
+@keyframes scroll-cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+}
+
+.scroll-cue {
+  animation: scroll-cue 2.6s var(--ease-out-expo) infinite;
+}
+
+/* SplitText's line masks clip to the line box, which a tight display leading
+   would cut through — the padding buys back the descenders. The mask then gives
+   the same amount back as negative margin, so the split headline occupies exactly
+   the height it did as one text block: no layout shift when the split runs after
+   hydration, and no gap between the motion and reduced-motion layouts.
+   (SplitText derives the mask's class from linesClass + "-mask".) */
+.split-line {
+  padding-bottom: 0.12em;
+}
+
+.split-line-mask {
+  margin-bottom: -0.12em;
+}
+
+/* Header "available for work" dot. */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+.status-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+/* Ambient loops are decorative — stop them outright rather than slow them.
+   Interaction-driven motion is gated separately (see MagneticButton). */
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track,
+  .status-dot,
+  .scroll-cue {
+    animation: none;
+  }
+}
