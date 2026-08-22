@@ -7,6 +7,7 @@ import MagneticButton from "@/components/shared/MagneticButton";
 import SmoothLink from "@/components/shared/SmoothLink";
 import SplitReveal from "@/components/shared/SplitReveal";
 import { gsap, useGSAP } from "@/lib/gsap";
+import { onRevealStart, revealStarted } from "@/lib/intro";
 import { CAPABILITY_COUNT, CONTACT } from "@/lib/nav";
 import { projects } from "@/lib/projects";
 import { DURATION, EASE_GSAP, INTRO, MOTION_OK } from "@/lib/tokens";
@@ -74,177 +75,147 @@ export default function Hero() {
 
         // ── The intro ──────────────────────────────────────────────────────────
         //
-        // One timeline for the whole opening: curtain and content on the same
-        // clock. This replaced three independent `gsap.from`s, which is why the
-        // load used to read as "nothing happens" — each started its own clock at
-        // hydration, so on a warm cache they all fired within a few frames of one
-        // another and the hero simply appeared.
+        // One timeline for the whole opening, and it deliberately does not start
+        // on mount. Mount means "React hydrated", which is not the same moment as
+        // "this page is worth looking at" — the webfont has not swapped and the
+        // covers have not decoded — so the preloader measures the real wait and
+        // this plays on its signal instead (lib/intro.ts).
         //
-        // It is deliberately time-based rather than scroll-linked. This is the
-        // first thing on screen the moment the page is ready, before the visitor
-        // has scrolled a pixel, so there is nothing for a ScrollTrigger to read.
-        // Every position below is a second on this timeline (see INTRO in
-        // lib/tokens.ts, which holds the whole choreography in one readable list).
+        // Every position below is therefore an offset from *the reveal*, not from
+        // mount, and it is the same list on a first visit as on a repeat one.
+        // That is what keeps it in step with the statement's own tween, which
+        // SplitReveal has to own (see the `gate` and `delay` props below): the
+        // two are synchronised by sharing one clock rather than by two files
+        // agreeing about a constant.
+        //
+        // Time-based rather than scroll-linked, because this is the first thing
+        // on screen the moment the page opens, before the visitor has scrolled a
+        // pixel — there is nothing for a ScrollTrigger to read yet. See INTRO in
+        // lib/tokens.ts, which holds the whole choreography in one readable list.
         //
         // `.to`, not `.from`, for content: the hidden state already exists in CSS
         // before paint (globals.css), so the timeline's job is to *undo* it. A
         // `.from` would first re-apply a state the element is already in, which is
         // the snap-back that made the previous version look broken.
-        //
-        // SplitReveal renders the statement and forwards no extra attributes, so
-        // it is matched by type — there is exactly one h1 here, and it is the node
-        // carrying `.kinetic`.
-        const headline = section.querySelector<HTMLElement>("h1");
-        const curtain = section.querySelector<HTMLElement>("[data-curtain]");
 
-        // Once per tab. A curtain on every client-side return to the home route
-        // would turn a 200ms navigation into a two-second wait, so a repeat visit
-        // skips straight to the content and only the first load gets the full
-        // opening. The matching flag is read before paint in app/layout.tsx.
-        let seen = false;
-        try {
-          seen = sessionStorage.getItem("intro-played") === "1";
-        } catch {
-          // Private mode / storage disabled: fall through and play it. A curtain
-          // shown twice is a much smaller problem than a thrown intro.
-        }
+        // The one-shot guard. `.intro-done` is a raw class on the section, so it
+        // is invisible to GSAP's context and outlives the revert that a dev
+        // StrictMode remount (or a change of motion preference) performs — at
+        // which point this setup would otherwise run a second time and animate a
+        // hero that has already played back in from hidden.
+        const played =
+          revealStarted() && section.classList.contains("intro-done");
 
-        const intro = gsap.timeline({
-          defaults: { ease: EASE_GSAP },
-          onComplete: () => {
-            // The section keeps its own styles from here on, so a later re-render
-            // can never re-hide a hero that already played.
-            section.classList.add("intro-done");
-            try {
-              sessionStorage.setItem("intro-played", "1");
-            } catch {
-              /* nothing to do — see above */
-            }
-          },
-        });
+        /** Unsubscribes the reveal listener if the context is torn down first. */
+        let offReveal: (() => void) | undefined;
 
-        // Transforms are set here rather than in CSS: GSAP owns every transform in
-        // this section, and a CSS transform on the same element would be a second
-        // writer for it.
-        gsap.set("[data-intro='eyebrow'], [data-intro='copy']", { y: 16 });
-        gsap.set("[data-intro='cta'], [data-intro='stat']", { y: 20 });
-        gsap.set("[data-intro='ribbon']", {
-          yPercent: 26,
-          skewY: 4,
-          scale: 0.94,
-        });
+        if (!played) {
+          // SplitReveal renders the statement and forwards no extra attributes,
+          // so it is matched by type — there is exactly one h1 here, and it is
+          // the node carrying `.kinetic`.
+          const headline = section.querySelector<HTMLElement>("h1");
 
-        if (curtain && !seen) {
-          gsap.set("[data-curtain-mark]", { y: 14, opacity: 0 });
+          const intro = gsap.timeline({
+            paused: true,
+            defaults: { ease: EASE_GSAP },
+            onComplete: () => {
+              // The section keeps its own styles from here on, so a later
+              // re-render can never re-hide a hero that already played.
+              section.classList.add("intro-done");
+            },
+          });
+
+          // Transforms are set here rather than in CSS: GSAP owns every transform
+          // in this section, and a CSS transform on the same element would be a
+          // second writer for it.
+          gsap.set("[data-intro='eyebrow'], [data-intro='copy']", { y: 16 });
+          gsap.set("[data-intro='cta'], [data-intro='stat']", { y: 20 });
+          gsap.set("[data-intro='ribbon']", {
+            yPercent: 26,
+            skewY: 4,
+            scale: 0.94,
+          });
+
+          const { beat } = INTRO;
+
           intro
-            .to(
-              "[data-curtain-rule]",
-              { scaleX: 1, duration: 0.75, ease: "expo.out" },
-              INTRO.curtain.rule,
-            )
-            .to(
-              "[data-curtain-mark]",
-              { y: 0, opacity: 1, duration: DURATION.slow },
-              INTRO.curtain.mark,
-            )
-            // expo.inOut, not expo.out: a panel this size covering the whole
-            // viewport needs to gather speed before it leaves, or the first third
-            // of the move looks like a stall.
-            .to(
-              curtain,
+            // The rules draw themselves across the frame, so the sequence starts
+            // with the page being *built* rather than with copy arriving from
+            // nowhere.
+            .from(
+              "[data-intro-rule] > div",
               {
-                yPercent: -100,
-                duration: INTRO.curtain.liftDuration,
-                ease: "expo.inOut",
+                scaleX: 0,
+                transformOrigin: "left center",
+                duration: 1.2,
+                stagger: 0.12,
               },
-              INTRO.curtain.lift,
+              beat.rules,
             )
-            // Out of the layer tree once it is off-screen: a full-viewport fixed
-            // element left behind is a compositing layer the rest of the page pays
-            // for on every frame.
-            .set(curtain, { display: "none" });
-        } else if (curtain) {
-          gsap.set(curtain, { display: "none" });
-        }
-
-        // Content starts as the curtain clears on a first visit, and immediately on
-        // a repeat one. The two overlap rather than queueing — the hero is already
-        // assembling itself behind the panel as it lifts, so the reveal shows
-        // motion in progress instead of a finished screen sliding into view.
-        const at = seen ? 0 : INTRO.contentAt;
-        const { beat } = INTRO;
-
-        intro
-          // The rules draw themselves across the frame, so the sequence starts
-          // with the page being *built* rather than with copy arriving from
-          // nowhere.
-          .from(
-            "[data-intro-rule] > div",
-            {
-              scaleX: 0,
-              transformOrigin: "left center",
-              duration: 1.2,
-              stagger: 0.12,
-            },
-            at + beat.rules,
-          )
-          // Eyebrow: the smallest thing, so the eye starts at the top of the page.
-          .to(
-            "[data-intro='eyebrow']",
-            { opacity: 1, y: 0, duration: DURATION.slow },
-            at + beat.eyebrow,
-          )
-          .to(
-            "[data-intro='copy']",
-            { opacity: 1, y: 0, duration: DURATION.slow },
-            at + beat.copy,
-          )
-          // The covers rise, un-skew and settle, staggered.
-          .to(
-            "[data-intro='ribbon']",
-            {
-              opacity: 1,
-              yPercent: 0,
-              skewY: 0,
-              scale: 1,
-              duration: DURATION.slow,
-              stagger: 0.09,
-            },
-            at + beat.ribbon,
-          )
-          // The two things that ask for an action come last.
-          .to(
-            "[data-intro='cta']",
-            { opacity: 1, y: 0, duration: DURATION.base },
-            at + beat.cta,
-          )
-          .to(
-            "[data-intro='stat']",
-            { opacity: 1, y: 0, duration: DURATION.base, stagger: 0.07 },
-            at + beat.stats,
-          );
-
-        // The signature beat: kinetic type on *arrival*, not only on exit. The
-        // statement lands spindly at a small optical size and thickens into its
-        // resting cut while its lines are still rising, so the type appears to be
-        // setting itself.
-        //
-        // It ends on exactly the values the scroll morph starts from (wght 430,
-        // opsz 72 — see the `kinetic` prop below), so the first scroll picks up
-        // precisely where this left off instead of snapping.
-        if (headline) {
-          intro
-            // Uncovered as its own lines begin to rise. Near-zero duration: this
-            // only lifts the CSS pre-intro state, it is not the animation — the
-            // SplitText line masks are, and they start on the same beat via the
-            // `delay` passed to SplitReveal below.
-            .to(headline, { opacity: 1, duration: 0.01 }, at + beat.statement)
-            .fromTo(
-              headline,
-              { "--wght": 200, "--opsz": 18, "--soft": 0 },
-              { "--wght": 430, "--opsz": 72, duration: 1.5 },
-              at + beat.statement,
+            // Eyebrow: the smallest thing, so the eye starts at the top of the
+            // page.
+            .to(
+              "[data-intro='eyebrow']",
+              { opacity: 1, y: 0, duration: DURATION.slow },
+              beat.eyebrow,
+            )
+            .to(
+              "[data-intro='copy']",
+              { opacity: 1, y: 0, duration: DURATION.slow },
+              beat.copy,
+            )
+            // The covers rise, un-skew and settle, staggered.
+            .to(
+              "[data-intro='ribbon']",
+              {
+                opacity: 1,
+                yPercent: 0,
+                skewY: 0,
+                scale: 1,
+                duration: DURATION.slow,
+                stagger: 0.09,
+              },
+              beat.ribbon,
+            )
+            // The two things that ask for an action come last.
+            .to(
+              "[data-intro='cta']",
+              { opacity: 1, y: 0, duration: DURATION.base },
+              beat.cta,
+            )
+            .to(
+              "[data-intro='stat']",
+              { opacity: 1, y: 0, duration: DURATION.base, stagger: 0.07 },
+              beat.stats,
             );
+
+          // The signature beat: kinetic type on *arrival*, not only on exit. The
+          // statement lands spindly at a small optical size and thickens into its
+          // resting cut while its lines are still rising, so the type appears to
+          // be setting itself.
+          //
+          // It ends on exactly the values the scroll morph starts from (wght 430,
+          // opsz 72 — see the `kinetic` prop below), so the first scroll picks up
+          // precisely where this left off instead of snapping.
+          if (headline) {
+            intro
+              // Uncovered as its own lines begin to rise. Near-zero duration:
+              // this only lifts the CSS pre-intro state, it is not the animation
+              // — the SplitText line masks are, and they start on the same beat
+              // via the `delay` passed to SplitReveal below.
+              .to(headline, { opacity: 1, duration: 0.01 }, beat.statement)
+              .fromTo(
+                headline,
+                { "--wght": 200, "--opsz": 18, "--soft": 0 },
+                { "--wght": 430, "--opsz": 72, duration: 1.5 },
+                beat.statement,
+              );
+          }
+
+          // Held until the preloader reports the page ready. Fires immediately
+          // if the reveal has already happened — a repeat visit, where the gate
+          // opens at once and the hero simply assembles.
+          offReveal = onRevealStart(() => intro.play());
         }
 
         // Depth: each plane lags the scroll by its own fraction of its own height,
@@ -266,6 +237,11 @@ export default function Hero() {
           ease: "none",
           scrollTrigger: { ...scrubbed },
         });
+
+        // The tweens above are the context's to revert; the subscription is not,
+        // so it is handed back here. Without this a torn-down timeline would
+        // still be holding a slot in the reveal's listener set.
+        return () => offReveal?.();
       });
     },
     { scope: root },
@@ -323,43 +299,6 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* ── The curtain ───────────────────────────────────────────────────────
-          A full-bleed panel that covers the whole document — `fixed`, above the
-          header's z-40 — for the first second of a visit.
-
-          It exists to solve a problem the hero cannot solve on its own: the
-          moment the page becomes ready is also the moment React hydrates and the
-          webfont swaps in, and neither is something a visitor should watch. With
-          the panel in front, that whole settling period happens off-stage, and
-          what the visitor actually sees is a deliberate opening.
-
-          It lifts rather than fades, with a vermilion hairline on its bottom
-          edge, so a bright line sweeps up the screen and leaves the hero behind
-          it. That single moving line is the reveal.
-
-          Removed from the a11y tree entirely and non-interactive: it is a
-          transition, not content, and it must never eat the first click. */}
-      <div
-        aria-hidden="true"
-        data-curtain
-        className="bg-paper pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-center"
-      >
-        <p
-          data-curtain-mark
-          className="font-display text-2xl tracking-tight md:text-3xl"
-        >
-          {CONTACT.shortName}
-          <span className="text-signal">.</span>
-        </p>
-        <span
-          data-curtain-rule
-          className="bg-ink/20 mt-4 block h-px w-[min(38vw,320px)] origin-left scale-x-0"
-        />
-        {/* The leading edge. Sits on the panel's bottom border, so it only becomes
-            visible as the panel travels up past the content. */}
-        <span className="bg-signal absolute inset-x-0 bottom-0 h-px" />
-      </div>
-
       {/* Eyebrow row */}
       <div className="text-ink-muted relative flex items-baseline justify-between gap-4 font-mono text-[0.625rem] tracking-[0.14em] uppercase sm:text-xs sm:tracking-[0.2em]">
         <p data-intro="eyebrow">{CONTACT.role}</p>
@@ -386,12 +325,15 @@ export default function Hero() {
         <SplitReveal
           as="h1"
           immediate
+          gate
           stagger={0.09}
-          // Same position as the intro timeline's statement beat, so the lines
-          // rise while the axes thicken instead of reading as two separate events.
-          // SplitReveal owns this tween (it has to survive autoSplit's re-splits),
-          // so the sync is by matching delay rather than by being on the timeline.
-          delay={INTRO.contentAt + INTRO.beat.statement}
+          // The same offset the intro timeline uses for its statement beat, on
+          // the same clock: `gate` holds this tween until the reveal too, so the
+          // lines rise exactly while the axes thicken instead of reading as two
+          // separate events. SplitReveal has to own this tween — it must survive
+          // autoSplit's re-splits — so the sync is by sharing the clock rather
+          // than by living on the timeline.
+          delay={INTRO.beat.statement}
           // The kinetic pass: the headline thickens and softens as the hero
           // leaves, in step with the drift and fade already on this wrapper — so
           // it reads as the type condensing on its way out rather than a separate
@@ -477,6 +419,16 @@ export default function Hero() {
                   width={project.cover!.width}
                   height={project.cover!.height}
                   sizes="(min-width: 1280px) 210px, (min-width: 1024px) 186px, 33vw"
+                  // Above the fold, so the default `lazy` had them arriving
+                  // *after* their own fade-in beat had played. Eager loading is
+                  // also what lets the preloader wait on them: it counts these
+                  // three decoding as a third of "ready".
+                  //
+                  // Not `preload`, and not the deprecated `priority`: a <head>
+                  // preload link for three decorative covers would compete with
+                  // Fraunces, which is the swap the preloader exists to hide.
+                  // Same call, for the same reason, as app/work/[slug]/page.tsx.
+                  loading="eager"
                   className="aspect-[4/3] w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
                 />
                 <figcaption className="text-paper absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-10 font-mono text-[0.5625rem] tracking-[0.16em] uppercase opacity-0 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100">

@@ -163,35 +163,58 @@ export const ROW = {
 } as const;
 
 /**
- * The hero's opening sequence — the one animation that is not driven by scroll.
+ * The opening sequence — the one animation that is not driven by scroll.
  *
  * It cannot be: this is what a visitor sees the instant the page is ready, before
  * they have scrolled a pixel, so every beat is a position on a timeline in
  * seconds. Scroll-linked motion has nothing to link to yet.
  *
- * Positions, not durations — each value is where that beat *starts* on the master
- * timeline, so the whole choreography can be read down this list in order. Total
- * runtime is about 2.6s on a first visit and 1.7s on a repeat one (the curtain is
- * once per tab).
+ * Two clocks, and keeping them separate is the point:
+ *   `load` / `exit` run on the preloader's clock, which starts at navigation.
+ *   `beat` runs on the *reveal's* clock, which starts when the gate opens.
+ * So the hero's choreography is written once and reads identically whether the
+ * gate took 0.9s or the full 2s — or, on a repeat visit, no time at all. The
+ * previous version had the hero's start offset baked into two files as a
+ * constant, and the two drifted the moment either clock changed.
+ *
+ * Positions, not durations — each value is where that beat *starts*, so the whole
+ * choreography can be read down this list in order.
  */
 export const INTRO = {
-  /** Full-bleed panel that covers hydration and the webfont swap. */
-  curtain: {
-    /** The rule under the wordmark drawing itself to full width. */
-    rule: 0,
-    /** Wordmark rising into place. */
-    mark: 0.06,
-    /** The panel lifting away, vermilion edge leading. */
-    lift: 0.72,
-    /** Seconds the lift takes. The longest single move in the sequence. */
-    liftDuration: 1,
+  /**
+   * Last-resort recovery, in seconds from navigation. Armed by the blocking
+   * inline script in app/layout.tsx and cleared by the reveal (lib/intro.ts).
+   *
+   * If it ever fires, JavaScript did not arrive — so it has to sit far enough
+   * past the real worst case (~2.4s) that a slow-but-working load never trips
+   * it, and close enough that a broken one is not a blank screen for long.
+   */
+  failsafe: 8,
+  /** The load gate: resolves at max(minHold, ready), never later than maxWait. */
+  load: {
+    /** Floor — the wordmark beat needs this long to read as deliberate. */
+    minHold: 0.9,
+    /** Ceiling — a stalled font can never hold the whole site hostage. */
+    maxWait: 2,
+    /** The counter running out to 100% once the gate has resolved. */
+    settle: 0.2,
   },
   /**
-   * Where hero content starts. On a first visit it begins as the curtain clears,
-   * so the two overlap rather than queueing; on a repeat visit it starts at zero.
+   * The exit, on the preloader's own timeline.
+   *
+   * `mark` deliberately equals `load.settle`, so the counter reaches 100% on the
+   * exact frame the group starts leaving — the number is never abandoned
+   * mid-count.
    */
-  contentAt: 0.95,
-  /** Offsets from `contentAt`, in the order they fire. */
+  exit: {
+    /** Wordmark, rule and counter leaving upward; the seams lighting up. */
+    mark: 0.2,
+    /** The panels begin to part — this is where the reveal is published. */
+    part: 0.38,
+    /** Seconds the part takes. The longest single move in the sequence. */
+    partDuration: 1,
+  },
+  /** Hero content beats, as offsets from the reveal, in the order they fire. */
   beat: {
     rules: 0,
     eyebrow: 0.05,
@@ -203,4 +226,3 @@ export const INTRO = {
     stats: 1.22,
   },
 } as const;
-

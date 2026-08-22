@@ -279,16 +279,47 @@ body {
   }
 }
 
-/* The curtain is only ever wanted on a scripted, motion-OK, first-of-tab visit.
-   Each of these three removes it outright rather than animating it, so there is no
-   frame in which a panel covers content nothing is going to move. */
-[data-curtain] {
+/* The failsafe.
+ *
+ * The rule above hides the hero on the promise that JavaScript will un-hide it,
+ * and that promise can be broken: one chunk that 404s, one exception before the
+ * matchMedia block, and the visitor is left looking at a blank first screen
+ * behind a preloader that will never leave. Nothing inside React can catch that
+ * — React is the thing that didn't arrive.
+ *
+ * So the only recovery that works is a timer in the blocking inline script in
+ * app/layout.tsx, which stamps `data-intro-failed` on <html> if the reveal has
+ * not happened by 8s (comfortably past the ~2.4s worst case). These rules are
+ * what that stamp does: show the hero, drop the preloader.
+ *
+ * Both of these are (0,4,0), exactly like the gate above, so they win on source
+ * order alone — which is why they sit immediately after it and why neither needs
+ * !important. Keep them here.
+ */
+[data-intro-failed] [data-hero-intro]:not(.intro-done) [data-intro],
+[data-intro-failed] [data-hero-intro]:not(.intro-done) h1 {
+  opacity: 1;
+}
+
+/* The preloader (components/intro/Preloader.tsx) is only ever wanted on a
+   scripted, motion-OK, first-of-tab visit that hasn't failed. Each guard removes
+   it outright rather than animating it away, so there is no frame in which a
+   panel covers content nothing is going to uncover.
+
+   Hidden by default and shown by the guarded rule, not the other way round: the
+   default has to be the safe state, because it is the one a visitor gets when
+   any assumption behind the other four turns out to be wrong.
+
+   Unlayered, so it stays after `@import "tailwindcss"` in the cascade — that is
+   what lets a bare attribute selector beat the layered `display` utility that
+   any later restyle of this component might bring with it. */
+[data-preloader] {
   display: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  [data-js]:not([data-intro-seen]) [data-curtain] {
-    display: flex;
+  [data-js]:not([data-intro-seen]):not([data-intro-failed]) [data-preloader] {
+    display: block;
   }
 }
 

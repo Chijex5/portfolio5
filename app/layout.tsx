@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
+import Preloader from "@/components/intro/Preloader";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import LiquidLens from "@/components/shared/LiquidLens";
+import { INTRO } from "@/lib/tokens";
 import "./globals.css";
 
 // Fraunces is the kinetic typeface, so it needs more than the weight axis. Google
@@ -78,31 +80,45 @@ export default function RootLayout({
       className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
     >
       <head>
-        {/* Marks the document as scripted *before first paint*, which is what lets
-            the hero hold its pre-intro state in CSS (see `[data-js]` in
-            globals.css).
+        {/* Three things that have to be settled *before first paint*, which is
+            what makes this a blocking inline script rather than an effect —
+            anything that runs after hydration is by definition too late.
 
-            Without this the hero had no intro at all from a visitor's point of
-            view: the server HTML painted the finished hero, then hydration ran,
-            then `gsap.from` snapped everything back to hidden and played the
-            reveal into a screen the user had already seen. The fix has to be a
-            blocking inline script rather than an effect — anything that runs after
-            hydration is by definition too late to prevent that first paint.
+            1. `data-js` marks the document as scripted, which is what lets the
+               hero hold its pre-intro state in CSS (see globals.css). Without it
+               the hero had no intro at all from a visitor's point of view: the
+               server HTML painted the finished hero, then hydration ran, then
+               `gsap.from` snapped everything back to hidden and played the
+               reveal into a screen the user had already seen. Keyed off `data-js`
+               rather than a bare rule so the pre-intro state only ever applies
+               where there is JavaScript to undo it — no-JS visitors get the
+               finished hero immediately, which is also what they should get.
 
-            Keyed off `data-js`, not a bare rule, so the pre-intro state only ever
-            applies where there is JavaScript to undo it. No-JS visitors get the
-            finished hero immediately, which is also what they should get. */}
+            2. `data-intro-seen` is the once-per-tab flag. Read here rather than
+               in the component because it decides whether the preloader is
+               painted at all, and deciding that in React would either flash the
+               preloader or desync hydration.
+
+            3. The failsafe. Both of the above hide content on the promise that
+               JavaScript will show it again; this timer is what keeps that
+               promise when JavaScript never arrives. It is deliberately the
+               crudest possible mechanism, because it has to survive the failure
+               of everything more sophisticated. Cleared by the reveal
+               (lib/intro.ts); the CSS it triggers is in globals.css.
+
+            Only armed on a visit that will actually play the intro — on a repeat
+            visit there is nothing hidden to recover, and `scrollRestoration`
+            must stay automatic so a mid-page reload still lands where it left
+            off. */}
         <script
-          // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{
             __html:
-              `document.documentElement.setAttribute("data-js","");` +
-              // Curtain plays once per tab, not on every return to the home
-              // route. Read here rather than in the component because the flag has
-              // to be known before the curtain's first paint — deciding it in React
-              // would either flash the curtain or desync hydration.
-              `try{if(sessionStorage.getItem("intro-played")==="1")` +
-              `document.documentElement.setAttribute("data-intro-seen","")}catch(e){}`,
+              `var d=document.documentElement;d.setAttribute("data-js","");` +
+              `var s=false;try{s=sessionStorage.getItem("intro-played")==="1"}catch(e){}` +
+              `if(s){d.setAttribute("data-intro-seen","")}else{` +
+              `try{history.scrollRestoration="manual"}catch(e){}` +
+              `window.__introFailsafe=setTimeout(function(){` +
+              `d.setAttribute("data-intro-failed","")},${INTRO.failsafe * 1000})}`,
           }}
         />
       </head>
@@ -126,6 +142,18 @@ export default function RootLayout({
             aria-hidden="true"
             className="grain pointer-events-none fixed inset-0 z-50"
           />
+
+          {/* The opening, over everything at z-70.
+
+              Here rather than in the hero for two reasons. Its HTML is in the
+              initial payload, so it paints before hydration — there is nothing
+              to cover the load with if it arrives after it. And `root` on
+              ReactLenis means children get no wrapper element, so this is a
+              direct child of <body>: no transformed ancestor, and therefore no
+              containing block that could clip a full-bleed fixed panel. Inside
+              the hero it sat under `[data-elastic]`, which takes a transform on
+              the first frame of scroll velocity and did exactly that. */}
+          <Preloader />
         </SmoothScrollProvider>
       </body>
     </html>
