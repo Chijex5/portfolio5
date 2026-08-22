@@ -82,15 +82,6 @@ export const AXES = {
 } as const;
 
 /**
- * Velocity-reactive marquee. The strip loops on its own, speeds up with page
- * scroll, and runs backwards when the page does.
- */
-export const MARQUEE = {
-  /** Extra loop speed at full scroll velocity, as a multiple of the base rate. */
-  boost: 3.2,
-} as const;
-
-/**
  * The site-wide elastic layer — "liquid on top of the page as you scroll".
  *
  * A literal full-page fluid distortion would mean rasterising the DOM into a
@@ -170,3 +161,46 @@ export const ROW = {
   /** Inset % the cover rests at before hover expands it to the frame edge. */
   inset: 5.5,
 } as const;
+
+/**
+ * The hero's opening sequence — the one animation that is not driven by scroll.
+ *
+ * It cannot be: this is what a visitor sees the instant the page is ready, before
+ * they have scrolled a pixel, so every beat is a position on a timeline in
+ * seconds. Scroll-linked motion has nothing to link to yet.
+ *
+ * Positions, not durations — each value is where that beat *starts* on the master
+ * timeline, so the whole choreography can be read down this list in order. Total
+ * runtime is about 2.6s on a first visit and 1.7s on a repeat one (the curtain is
+ * once per tab).
+ */
+export const INTRO = {
+  /** Full-bleed panel that covers hydration and the webfont swap. */
+  curtain: {
+    /** The rule under the wordmark drawing itself to full width. */
+    rule: 0,
+    /** Wordmark rising into place. */
+    mark: 0.06,
+    /** The panel lifting away, vermilion edge leading. */
+    lift: 0.72,
+    /** Seconds the lift takes. The longest single move in the sequence. */
+    liftDuration: 1,
+  },
+  /**
+   * Where hero content starts. On a first visit it begins as the curtain clears,
+   * so the two overlap rather than queueing; on a repeat visit it starts at zero.
+   */
+  contentAt: 0.95,
+  /** Offsets from `contentAt`, in the order they fire. */
+  beat: {
+    rules: 0,
+    eyebrow: 0.05,
+    /** Statement lines rise while the axes thicken — the signature beat. */
+    statement: 0.18,
+    copy: 0.72,
+    ribbon: 0.84,
+    cta: 1.14,
+    stats: 1.22,
+  },
+} as const;
+

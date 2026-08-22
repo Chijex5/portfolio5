@@ -24,7 +24,7 @@ export default function About() {
         <div className="md:col-span-4">
           <div className="md:sticky md:top-32">
             <h2 className="text-ink-muted font-mono text-xs tracking-[0.2em] uppercase">
-              02 &mdash; About
+              04 &mdash; About
             </h2>
             <p className="text-ink/30 mt-3 font-mono text-xs tracking-[0.2em] lowercase">
               (who)

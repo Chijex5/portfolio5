@@ -47,3 +47,28 @@ export interface Project {
   live?: string;
   blocks?: CaseStudyBlock[];
 }
+
+/**
+ * A writing entry for the featured-articles section.
+ *
+ * PLACEHOLDER CONTENT — lib/articles.ts ships five stand-ins so the section has
+ * real rhythm to animate against. Swap them for actual posts; nothing outside
+ * that one file needs to change.
+ */
+export interface Article {
+  /** Stable key. Also the fragment used if these ever become local routes. */
+  slug: string;
+  /** Editorial index — "01".."05". */
+  index: string;
+  title: string;
+  /** One line. Sits under the title on the featured entry only. */
+  standfirst: string;
+  /** "Engineering", "Craft", … — the mono label. */
+  topic: string;
+  /** ISO date. Rendered via toLocaleDateString, so no pre-formatted strings. */
+  date: string;
+  /** Whole minutes. Rendered as "6 min". */
+  minutes: number;
+  /** Where it lives. External for now, since the blog is its own deployment. */
+  href: string;
+}

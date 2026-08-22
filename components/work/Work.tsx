@@ -19,7 +19,7 @@ export default function Work() {
     <section id="work" className="px-6 pt-24 md:px-10 md:pt-32">
       <header className="border-ink/10 flex items-baseline justify-between gap-4 border-b pb-6">
         <h2 className="text-ink-muted font-mono text-xs tracking-[0.2em] uppercase">
-          01 &mdash; Selected work
+          02 &mdash; Selected work
         </h2>
         <p
           className="text-ink-muted font-mono text-xs tracking-[0.2em] uppercase"

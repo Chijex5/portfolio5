@@ -11,9 +11,20 @@ import { cn } from "@/lib/utils";
 /**
  * Fixed header: magnetic wordmark, magnetic pill nav, status indicator.
  *
- * Past the fold the pill picks up a solid surface so it stays legible over
- * content. That's read off the shared Lenis instance (no extra scroll listener)
- * and only commits to React state when the boolean actually flips.
+ * Past the fold the header needs to stop competing with whatever has scrolled
+ * under it, and the right answer differs by width:
+ *
+ *   - from `md` up the nav is an island in the middle of a wide, mostly empty
+ *     bar, so the *pill* takes a surface and the rest of the header stays
+ *     transparent. A full-width band there would be a heavy grey stripe across a
+ *     page whose whole look is open warm paper.
+ *   - below `md` there is no room for that. The wordmark sits directly over body
+ *     copy and large cover images, so the header gets a blurred band instead and
+ *     the pill drops its own surface — otherwise the pill reads as a second
+ *     panel floating on the first.
+ *
+ * `pinned` is read off the shared Lenis instance (no extra scroll listener) and
+ * only commits to React state when the boolean actually flips.
  */
 export default function Header() {
   const [pinned, setPinned] = useState(false);
@@ -28,6 +39,21 @@ export default function Header() {
 
   return (
     <header className="pointer-events-none fixed top-0 left-0 z-40 flex w-full items-center justify-between px-6 py-5 md:px-10">
+      {/* Mobile-only blurred band. The mask fades the blur out at the bottom
+          instead of ending on a hard horizontal line — backdrop-filter is clipped
+          by the mask, so the falloff applies to the blur itself, not just to a
+          tint over it. Sized past the header box (-bottom-4) so the fade has room
+          to finish below the content it is protecting. */}
+      <div
+        aria-hidden="true"
+        className={cn(
+          "absolute -bottom-4 left-0 -z-10 w-full transition-opacity duration-300 md:hidden",
+          "bg-paper/70 top-0 backdrop-blur-lg",
+          "[mask-image:linear-gradient(to_bottom,black_58%,transparent_100%)]",
+          pinned ? "opacity-100" : "opacity-0",
+        )}
+      />
+
       <a
         href="#main"
         className="bg-ink text-paper pointer-events-auto sr-only rounded-full px-4 py-2 text-sm focus:not-sr-only focus:absolute focus:top-5 focus:left-6"
@@ -58,8 +84,10 @@ export default function Header() {
             <ul
               className={cn(
                 "flex items-center gap-1 rounded-full border p-1 transition-colors duration-300",
+                // Surface from `md` up only: on mobile the header band above is
+                // already doing this job, and stacking both looks like two panels.
                 pinned
-                  ? "border-ink/10 bg-paper/80 shadow-[0_1px_20px_rgba(20,17,15,0.06)] backdrop-blur-md"
+                  ? "md:border-ink/10 md:bg-paper/80 border-transparent md:shadow-[0_1px_20px_rgba(20,17,15,0.06)] md:backdrop-blur-md"
                   : "border-transparent",
               )}
             >

@@ -202,21 +202,6 @@ body {
   opacity: 1;
 }
 
-/* Marquee: the track holds two copies of its content, so -50% lands the second
-   copy exactly where the first began. Duration comes from the component. */
-@keyframes marquee {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(-50%, 0, 0);
-  }
-}
-
-.marquee-track {
-  animation: marquee var(--marquee-duration, 28s) linear infinite;
-}
-
 /* Hero scroll cue: a hairline that runs down, then out the bottom. */
 @keyframes scroll-cue {
   0% {
@@ -248,11 +233,63 @@ body {
    hydration, and no gap between the motion and reduced-motion layouts.
    (SplitText derives the mask's class from linesClass + "-mask".) */
 .split-line {
-  padding-bottom: 0.12em;
+  /* 0.18em, not 0.12em: Fraunces at display size with 0.96 leading puts the 'y'
+     of "actually" below the line box, and the mask clips exactly at that box, so
+     the tail of the descender was being cut off in the hero. The mask gives the
+     same amount back as negative margin below, so the block still occupies the
+     height it did as one text node. */
+  padding-bottom: 0.18em;
 }
 
 .split-line-mask {
-  margin-bottom: -0.12em;
+  margin-bottom: -0.18em;
+}
+
+/* ------------------------------------------------------------------ *
+ * Hero intro — pre-paint state
+ * ------------------------------------------------------------------ *
+ *
+ * The hero's opening sequence is a GSAP timeline, but GSAP cannot run before
+ * hydration, and hydration cannot run before the server HTML has painted. So the
+ * *starting* state of the intro has to be expressed in CSS or there is no intro:
+ * the finished hero paints, then the timeline yanks it back to hidden and plays a
+ * reveal the visitor has already watched arrive.
+ *
+ * Only opacity is set here, never a transform. Transforms are GSAP's to own (one
+ * writer per element — the rule this section is built on), and opacity cannot
+ * shift layout, so the pre-intro state costs nothing in CLS.
+ *
+ * Three guards, all load-bearing:
+ *   [data-js]  — set by the inline script in app/layout.tsx before first paint.
+ *                Without JS nothing is hidden, because nothing would un-hide it.
+ *   no-preference — reduced-motion visitors get the finished hero, not a fade.
+ *   .intro-done — the timeline stamps this on the section when it completes, so
+ *                 the rule stops applying and the elements keep their own styles
+ *                 (a re-render must never be able to hide a hero that already
+ *                 played).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-js] [data-hero-intro]:not(.intro-done) [data-intro],
+  /* The statement too, matched by type because SplitReveal renders it and
+     forwards no attributes. It is the largest thing on the first screen, so a
+     flash of it in its finished state is the one most worth preventing — and it
+     is also the element whose masks carry the reveal once GSAP takes over. */
+  [data-js] [data-hero-intro]:not(.intro-done) h1 {
+    opacity: 0;
+  }
+}
+
+/* The curtain is only ever wanted on a scripted, motion-OK, first-of-tab visit.
+   Each of these three removes it outright rather than animating it, so there is no
+   frame in which a panel covers content nothing is going to move. */
+[data-curtain] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-js]:not([data-intro-seen]) [data-curtain] {
+    display: flex;
+  }
 }
 
 /* Header "available for work" dot. */
@@ -320,7 +357,6 @@ body {
 /* Ambient loops are decorative — stop them outright rather than slow them.
    Interaction-driven motion is gated separately (see MagneticButton). */
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track,
   .status-dot,
   .scroll-cue {
     animation: none;

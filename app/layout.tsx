@@ -74,8 +74,38 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
     >
+      <head>
+        {/* Marks the document as scripted *before first paint*, which is what lets
+            the hero hold its pre-intro state in CSS (see `[data-js]` in
+            globals.css).
+
+            Without this the hero had no intro at all from a visitor's point of
+            view: the server HTML painted the finished hero, then hydration ran,
+            then `gsap.from` snapped everything back to hidden and played the
+            reveal into a screen the user had already seen. The fix has to be a
+            blocking inline script rather than an effect — anything that runs after
+            hydration is by definition too late to prevent that first paint.
+
+            Keyed off `data-js`, not a bare rule, so the pre-intro state only ever
+            applies where there is JavaScript to undo it. No-JS visitors get the
+            finished hero immediately, which is also what they should get. */}
+        <script
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{
+            __html:
+              `document.documentElement.setAttribute("data-js","");` +
+              // Curtain plays once per tab, not on every return to the home
+              // route. Read here rather than in the component because the flag has
+              // to be known before the curtain's first paint — deciding it in React
+              // would either flash the curtain or desync hydration.
+              `try{if(sessionStorage.getItem("intro-played")==="1")` +
+              `document.documentElement.setAttribute("data-intro-seen","")}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="font-body min-h-dvh">
         <SmoothScrollProvider>
           <Header />
