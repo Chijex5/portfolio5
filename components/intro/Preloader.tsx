@@ -99,6 +99,14 @@ export default function Preloader() {
         );
         if (!group || !fill || !count || panels.length !== 2) return;
 
+        // Re-bound with the narrowed type. `tick` below is a hoisted `function`
+        // declaration, so TypeScript cannot prove it does not run before the guard
+        // above and resets the null-narrowing of anything it captures. These two
+        // are declared `HTMLElement` outright, so there is no narrowing left to
+        // lose — and the guard stays the single place the absence is handled.
+        const bar: HTMLElement = fill;
+        const readout: HTMLElement = count;
+
         // ── The exit ─────────────────────────────────────────────────────────
         //
         // Built paused and played by the gate below, so the sequence has one
@@ -241,11 +249,11 @@ export default function Preloader() {
           // actually changes — the same discipline as ElasticProvider. The bar
           // and the group are separate elements on purpose, so the ticker and
           // the exit timeline are never two writers of one transform.
-          fill.style.transform = `scaleX(${shown})`;
+          bar.style.transform = `scaleX(${shown})`;
           const pct = Math.round(shown * 100);
           if (pct !== printed) {
             printed = pct;
-            count.textContent = `${pct}%`;
+            readout.textContent = `${pct}%`;
           }
         }
 
