@@ -67,8 +67,14 @@ export default function LiquidCarousel({
     () => projects.filter((project) => project.cover),
     [projects],
   );
+  // `plate`, not `src`. These URLs go to THREE.TextureLoader, which bypasses
+  // next/image: whatever is named here is fetched at full size and held on the
+  // GPU *uncompressed*. The 2400x1650 master would cost ~15.8 MB of VRAM per
+  // plate before mipmaps, times six or more plates, to be drawn into a box
+  // measureTrack caps at 620 CSS px. `plate` is the same picture at 1240x850 —
+  // still 2x the largest size it can be drawn at. See Project["cover"].
   const sources = useMemo(
-    () => slides.map((project) => project.cover!.src),
+    () => slides.map((project) => project.cover!.plate ?? project.cover!.src),
     [slides],
   );
 
@@ -255,9 +261,18 @@ export default function LiquidCarousel({
       // drag-only affordance, so the list stays the accessible path — exactly the
       // pattern the work rows already use for their plate link.
       aria-hidden="true"
+      // overflow-clip is load-bearing, not cosmetic: the ring is wider than the
+      // viewport by design (measureTrack), and the plates are absolutely
+      // positioned out to ±span/2. Opacity 0 and pointer-events: none do not
+      // remove a box from its ancestor's scrollable overflow — only clipping
+      // does — so without this the document grew ~1800px of dead space to the
+      // right and every section inherited a horizontal scrollbar. `clip` rather
+      // than `hidden`: it never becomes a scroll container, so it can't swallow
+      // a stray programmatic scrollLeft or fight Lenis.
+      //
       // pan-y keeps vertical page scroll working while the horizontal axis is
       // ours; without it the browser claims the gesture before pointermove fires.
-      className="relative h-[62svh] max-h-[620px] min-h-[320px] w-full cursor-grab touch-pan-y select-none [&[data-dragging]]:cursor-grabbing"
+      className="relative h-[62svh] max-h-[620px] min-h-[320px] w-full cursor-grab touch-pan-y overflow-clip select-none [&[data-dragging]]:cursor-grabbing"
     >
       {layout ? (
         <Suspense fallback={null}>

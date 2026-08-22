@@ -3,7 +3,7 @@ import SplitReveal from "@/components/shared/SplitReveal";
 
 /** Where I am now, and where the background comes from. */
 const FACTS = [
-  { term: "Currently", detail: "EY Nigeria — Transfer pricing" },
+  { term: "Currently", detail: "Optiplex — Full-Stack Developer" },
   {
     term: "Studying",
     detail: "Statistics — University of Nigeria, Nsukka",

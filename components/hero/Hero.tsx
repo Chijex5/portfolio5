@@ -1,13 +1,38 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import LocalTime from "@/components/shared/LocalTime";
 import MagneticButton from "@/components/shared/MagneticButton";
 import SmoothLink from "@/components/shared/SmoothLink";
 import SplitReveal from "@/components/shared/SplitReveal";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { CONTACT } from "@/lib/nav";
+import { CONTACT, STACK } from "@/lib/nav";
+import { projects } from "@/lib/projects";
 import { DURATION, EASE_GSAP, MOTION_OK } from "@/lib/tokens";
+
+/**
+ * The three covers that make up the hero ribbon, with the depth each sits at.
+ *
+ * Depth is the `data-parallax` multiplier: the nearest plate barely moves, the
+ * furthest lags most, so the row separates into layers as the hero leaves. The
+ * `drop` values stagger them into a diagonal rather than a row of equals.
+ */
+const RIBBON = projects
+  .filter((project) => project.cover)
+  .slice(0, 3)
+  .map((project, i) => ({
+    project,
+    depth: [0.1, 0.24, 0.15][i],
+    drop: [0, 34, 14][i],
+  }));
+
+/** Three honest numbers. Derived, so they can never drift from the content. */
+const STATS = [
+  { value: String(projects.length).padStart(2, "0"), label: "Shipped" },
+  { value: String(STACK.length).padStart(2, "0"), label: "In rotation" },
+  { value: CONTACT.available ? "Open" : "Booked", label: "For work" },
+] as const;
 
 /**
  * Hero: kinetic type over parallax depth planes (plan §6, M3).
@@ -19,6 +44,12 @@ import { DURATION, EASE_GSAP, MOTION_OK } from "@/lib/tokens";
  *
  * Height is svh rather than dvh: a mobile URL bar collapsing mid-scroll would
  * otherwise resize the section out from under its ScrollTriggers.
+ *
+ * One rule holds this section together: **one writer per element's transform.**
+ * The cover plates and the depth planes are driven by GSAP (`data-parallax`); the
+ * band around the whole section is driven by ElasticProvider (`data-elastic`, set
+ * in app/page.tsx). Nothing carries both — that is the desync bug the plan calls
+ * out, and here it would show up as plates that stutter only during fast scroll.
  */
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
@@ -51,8 +82,24 @@ export default function Hero() {
           delay: 0.45,
         });
 
+        // The ribbon builds itself after the copy has landed: each plate rises,
+        // un-skews and settles. Same expo curve as everything else, so it reads
+        // as one entrance rather than a second animation starting.
+        gsap.from("[data-ribbon]", {
+          yPercent: 26,
+          opacity: 0,
+          skewY: 4,
+          scale: 0.94,
+          duration: DURATION.slow,
+          ease: EASE_GSAP,
+          stagger: 0.09,
+          delay: 0.72,
+        });
+
         // Depth: each plane lags the scroll by its own fraction of its own height,
-        // so the further back it should read, the larger the multiplier.
+        // so the further back it should read, the larger the multiplier. The cover
+        // plates opt into the same pass, which is what layers them against the
+        // blobs behind and the headline in front.
         gsap.utils.toArray<HTMLElement>("[data-parallax]").forEach((plane) => {
           gsap.to(plane, {
             yPercent: Number(plane.dataset.parallax ?? 0) * 100,
@@ -81,9 +128,25 @@ export default function Hero() {
     >
       {/* Depth planes — decorative, so hidden from the a11y tree entirely. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        {/* Hairline rules, furthest back: they give the parallax something to be
+            measured against. Without a straight edge in the scene the depth
+            planes have nothing to slide past and the movement reads as drift. */}
+        <div
+          data-parallax="0.5"
+          className="absolute inset-x-0 top-[38vh] will-change-transform"
+        >
+          <div className="bg-ink/[0.055] h-px w-full" />
+          <div className="bg-ink/[0.035] mt-[18vh] h-px w-full" />
+        </div>
         <div
           data-parallax="0.36"
           className="bg-signal/10 absolute -top-[10vw] -right-[8vw] size-[46vw] rounded-full blur-3xl will-change-transform"
+        />
+        {/* Counterweight, bottom-left and cooler, so the warm blob top-right
+            isn't the only mass in the frame. */}
+        <div
+          data-parallax="0.28"
+          className="bg-ink/[0.045] absolute -bottom-[14vw] -left-[10vw] size-[38vw] rounded-full blur-3xl will-change-transform"
         />
         <div
           data-parallax="0.18"
@@ -91,9 +154,6 @@ export default function Hero() {
         >
           26
         </div>
-        {/* Two planes plus the foreground drift below give three depth speeds.
-            A full-width rule was the obvious third, but at any viewport it
-            eventually lands mid-sentence and reads as a strike-through. */}
       </div>
 
       {/* Eyebrow row */}
@@ -159,18 +219,53 @@ export default function Hero() {
           </span>
         </SplitReveal>
 
-        <p
-          data-hero-fade
-          className="text-ink-muted mt-8 max-w-xl text-lg leading-relaxed text-pretty md:text-xl"
-        >
-          I&rsquo;m {CONTACT.shortName} — a {CONTACT.role.toLowerCase()} who
-          designs the data model, builds the API, and sweats the interface.
-          Below are products I took from idea to shipped.
-        </p>
+        {/* Copy left, ribbon right. On anything narrower than lg the ribbon would
+            be competing with the headline for the same 300px, so it goes away
+            rather than shrinking into thumbnails. */}
+        <div className="mt-8 flex items-end justify-between gap-12">
+          <p
+            data-hero-fade
+            className="text-ink-muted max-w-xl text-lg leading-relaxed text-pretty md:text-xl"
+          >
+            I&rsquo;m {CONTACT.shortName} — a {CONTACT.role.toLowerCase()} who
+            designs the data model, builds the API, and sweats the interface.
+            Below are products I took from idea to shipped.
+          </p>
+
+          {/* The work, glimpsed. Decorative twin of the list below — same covers,
+              and the list is the accessible path — so it stays out of the a11y
+              tree entirely and the images carry no alt text. */}
+          <div
+            aria-hidden="true"
+            className="hidden shrink-0 items-end gap-4 lg:flex"
+          >
+            {RIBBON.map(({ project, depth, drop }) => (
+              <figure
+                key={project.slug}
+                data-ribbon
+                data-parallax={depth}
+                style={{ marginBottom: `${drop}px` }}
+                className="group border-ink/10 relative w-[172px] overflow-hidden border will-change-transform xl:w-[196px]"
+              >
+                <Image
+                  src={project.cover!.src}
+                  alt=""
+                  width={project.cover!.width}
+                  height={project.cover!.height}
+                  sizes="196px"
+                  className="aspect-[4/3] w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.06]"
+                />
+                <figcaption className="text-paper absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-3 pt-10 font-mono text-[0.5625rem] tracking-[0.16em] uppercase opacity-0 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100">
+                  {project.index} &mdash; {project.title}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Bottom row */}
-      <div className="relative mt-auto flex items-end justify-between gap-6 pt-16">
+      <div className="relative mt-auto flex flex-wrap items-end justify-between gap-x-6 gap-y-8 pt-16">
         {/* MagneticButton owns its own transform, so the fade goes on a wrapper
             rather than fighting it for the same element. */}
         <div data-hero-fade>
@@ -190,15 +285,32 @@ export default function Hero() {
           </MagneticButton>
         </div>
 
-        <div
-          data-hero-fade
-          aria-hidden="true"
-          className="text-ink-muted hidden flex-col items-center gap-3 font-mono text-[0.625rem] tracking-[0.2em] uppercase sm:flex"
-        >
-          Scroll
-          <span className="bg-ink/20 block h-10 w-px overflow-hidden">
-            <span className="scroll-cue bg-ink block h-full w-full" />
-          </span>
+        <div className="flex items-end gap-8 sm:gap-12">
+          {/* A real <dl>: these are term/value pairs, and a screen reader should
+              get "Shipped, 06" rather than two loose strings. */}
+          <dl data-hero-fade className="flex items-end gap-8 sm:gap-12">
+            {STATS.map((stat) => (
+              <div key={stat.label}>
+                <dd className="font-display text-3xl leading-none tracking-[-0.01em] md:text-4xl">
+                  {stat.value}
+                </dd>
+                <dt className="text-ink-muted mt-2 font-mono text-[0.5625rem] tracking-[0.2em] uppercase">
+                  {stat.label}
+                </dt>
+              </div>
+            ))}
+          </dl>
+
+          <div
+            data-hero-fade
+            aria-hidden="true"
+            className="text-ink-muted hidden flex-col items-center gap-3 font-mono text-[0.625rem] tracking-[0.2em] uppercase sm:flex"
+          >
+            Scroll
+            <span className="bg-ink/20 block h-10 w-px overflow-hidden">
+              <span className="scroll-cue bg-ink block h-full w-full" />
+            </span>
+          </div>
         </div>
       </div>
     </section>

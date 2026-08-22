@@ -3,6 +3,7 @@ import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
 import Footer from "@/components/layout/Footer";
 import Header from "@/components/layout/Header";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
+import LiquidLens from "@/components/shared/LiquidLens";
 import "./globals.css";
 
 // Fraunces is the kinetic typeface, so it needs more than the weight axis. Google
@@ -80,6 +81,21 @@ export default function RootLayout({
           <Header />
           {children}
           <Footer />
+
+          {/* The surface passes, over the whole document.
+
+              The lens sits below the header (z-30 vs z-40) so it glides *under*
+              the nav rather than washing over it, and the grain sits above both
+              at z-50 — grain that the header escaped would make the header look
+              like it was floating off the page instead of printed on it.
+
+              Both are pointer-events-none and aria-hidden: nothing here is
+              interactive and nothing here is content. */}
+          <LiquidLens />
+          <div
+            aria-hidden="true"
+            className="grain pointer-events-none fixed inset-0 z-50"
+          />
         </SmoothScrollProvider>
       </body>
     </html>

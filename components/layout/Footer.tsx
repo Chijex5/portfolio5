@@ -20,6 +20,9 @@ export default function Footer() {
 
   return (
     <footer
+      // The last elastic band (see app/page.tsx for the composition). Moderate:
+      // the footer is where the page comes to rest, so it should settle, not whip.
+      data-elastic="0.8"
       id="contact"
       className="border-ink/10 border-t px-6 pt-24 pb-10 md:px-10 md:pt-32"
     >

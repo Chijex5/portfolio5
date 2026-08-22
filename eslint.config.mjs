@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Throwaway working dir: raw captures, probe scripts, and — because a
+    // headless Chrome run will happily drop a whole browser profile in here —
+    // bundled extension JS that would otherwise dominate the lint output.
+    ".scratch/**",
   ]),
 ]);
 

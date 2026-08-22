@@ -90,6 +90,50 @@ export const MARQUEE = {
   boost: 3.2,
 } as const;
 
+/**
+ * The site-wide elastic layer — "liquid on top of the page as you scroll".
+ *
+ * A literal full-page fluid distortion would mean rasterising the DOM into a
+ * WebGL texture every frame: text stops being text, selection and screen readers
+ * die, and the framerate goes with them. What actually reads as liquid is the
+ * page *deforming under its own momentum* — so each band shears, stretches and
+ * lags by a share of the shared scroll velocity, and the differing shares are
+ * what make it feel like depth rather than one sheet tilting.
+ *
+ * Every value is a peak reached only at full scroll velocity. At a normal reading
+ * scroll they are nearly nothing, which is the point: the effect should be felt
+ * on a fast flick and invisible on a slow read.
+ */
+export const ELASTIC = {
+  /** Peak skewY in degrees — the shear that reads as the page catching up. */
+  skew: 1.9,
+  /** Peak scaleY stretch along the direction of travel. */
+  stretch: 0.045,
+  /** Fraction of the stretch taken back off the x axis, so volume looks kept. */
+  pinch: 0.55,
+  /** Peak px a band lags behind the scroll, before its own multiplier. */
+  lag: 26,
+  /** Ceiling on any single band's multiplier, so no `data-elastic` typo folds it. */
+  maxIntensity: 3,
+} as const;
+
+/**
+ * The cursor lens: a soft warm highlight that trails the pointer and stretches
+ * along its direction of travel, so the page reads as having a wet surface the
+ * cursor is dragging through. Blend-mode only — it never intercepts a pointer
+ * event and never sits above text in the a11y tree.
+ */
+export const LENS = {
+  /** Diameter in px at rest. */
+  size: 460,
+  /** Seconds for the lens to reach the cursor. Higher = more drag. */
+  follow: 0.55,
+  /** Peak scaleX stretch along travel at full cursor speed. */
+  stretch: 0.5,
+  /** Peak opacity. Deliberately low — texture, not a spotlight. */
+  opacity: 0.5,
+} as const;
+
 export const CAROUSEL = {
   /** Slide aspect ratio (w / h). */
   aspect: 1.34,

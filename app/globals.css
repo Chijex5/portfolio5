@@ -70,6 +70,17 @@ body {
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+
+  /* Net, not the fix. Every component that throws a box sideways clips itself
+     (see LiquidCarousel); this only guarantees that one that forgets can never
+     hand the whole document a horizontal scrollbar.
+
+     `clip` rather than `hidden` on purpose:
+       - `hidden` would make <body> a scroll container, which breaks the sticky
+         column in About and gives Lenis a second scrollable box to argue with;
+       - `clip` clips without ever scrolling, and leaves position: sticky alone.
+     The y axis must stay `visible` — the page scrolls. */
+  overflow-x: clip;
 }
 
 ::selection {
@@ -261,6 +272,51 @@ body {
   animation: pulse-dot 2.4s ease-in-out infinite;
 }
 
+/* ------------------------------------------------------------------ *
+ * The liquid surface
+ * ------------------------------------------------------------------ */
+
+/* The cursor lens (components/shared/LiquidLens.tsx). Geometry, opacity and
+   rotation are written by GSAP; everything visual lives here.
+
+   `plus-lighter` rather than `screen` or `overlay`: on warm paper it adds light
+   without shifting hue, so the lens reads as a wet highlight on the page instead
+   of a coloured gel over it. The vermilion is at a few percent — at anything
+   higher it stops being a surface and becomes a spotlight. */
+.liquid-lens {
+  background: radial-gradient(
+    circle closest-side,
+    color-mix(in oklab, var(--signal) 22%, transparent) 0%,
+    color-mix(in oklab, var(--signal) 9%, transparent) 38%,
+    transparent 72%
+  );
+  mix-blend-mode: plus-lighter;
+  filter: blur(18px);
+  /* Promoted once, not per frame: this element transforms on every pointer move
+     for the life of the page, so it is the one place a permanent layer is right. */
+  will-change: transform, opacity;
+}
+
+/* Film grain over everything. Static noise, so it costs one paint and then
+   nothing — the movement people read as "grain crawling" is the page moving
+   underneath a fixed layer, which is free.
+
+   The SVG is inline rather than a file: it is smaller than the request that would
+   fetch it, and it can never arrive after first paint. */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: 0.055;
+}
+
+/* Bands driven by ElasticProvider. The transform itself is written from JS; this
+   only makes sure the shear pivots about the band's own top edge, so a section
+   leans away from the one above it rather than rotating about its middle. */
+[data-elastic] {
+  transform-origin: 50% 0%;
+  backface-visibility: hidden;
+}
+
 /* Ambient loops are decorative — stop them outright rather than slow them.
    Interaction-driven motion is gated separately (see MagneticButton). */
 @media (prefers-reduced-motion: reduce) {
@@ -278,5 +334,16 @@ body {
 
   .magnet > * {
     filter: none;
+  }
+
+  /* The lens and the elastic shear are motion by definition — there is no
+     reduced version of either worth keeping, so they simply aren't there. Both
+     are gated in JS too; this covers the frame before hydration. */
+  .liquid-lens {
+    display: none;
+  }
+
+  [data-elastic] {
+    transform: none !important;
   }
 }

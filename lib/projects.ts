@@ -1,8 +1,13 @@
 import type { Project } from "@/lib/types";
 
 /**
- * The work. Order here is the order on the page and in the carousel (M6+), so
- * lead with the strongest piece.
+ * The work. Order here is the order on the page and in the carousel, so lead with
+ * the strongest piece.
+ *
+ * Covers are screenshots of the live deployments, captured by
+ * `node scripts/capture-covers.mjs` — re-run it after a project gets a redesign.
+ * `jobless` is the exception: it has no frontend yet, so it keeps the generated
+ * abstract plate from scripts/make-covers.py.
  */
 export const projects: readonly Project[] = [
   {
@@ -16,10 +21,12 @@ export const projects: readonly Project[] = [
     tags: ["Next.js", "Tailwind", "Paystack", "PostgreSQL"],
     cover: {
       src: "/images/work/dfootprint.webp",
-      alt: "Concentric arcs traced by a single vermilion curve.",
-      width: 1600,
-      height: 1100,
+      plate: "/images/work/dfootprint-plate.webp",
+      alt: "The D'Footprint storefront: a pair of handmade leather slides photographed close up, the wordmark drawn in outline across them.",
+      width: 2400,
+      height: 1650,
     },
+    live: "https://dfootprint.me",
   },
   {
     slug: "jobless",
@@ -32,6 +39,7 @@ export const projects: readonly Project[] = [
     tags: ["Python", "AI validation", "Scraper", "MongoDB"],
     cover: {
       src: "/images/work/jobless.webp",
+      plate: "/images/work/jobless-plate.webp",
       alt: "A dot matrix thinning left to right, three dots picked out in vermilion.",
       width: 1600,
       height: 1100,
@@ -48,10 +56,12 @@ export const projects: readonly Project[] = [
     tags: ["Next.js", "TypeScript", "LLM", "React Flow"],
     cover: {
       src: "/images/work/wayframe.webp",
-      alt: "Six wireframe screens wired into a graph, one framed in vermilion.",
-      width: 1600,
-      height: 1100,
+      plate: "/images/work/wayframe-plate.webp",
+      alt: "Wayframe's dark canvas: \u201cDescribe the app. Get the screen flow.\u201d beside a column of metrics and an empty flow canvas.",
+      width: 2400,
+      height: 1650,
     },
+    live: "https://wayframe.vercel.app",
   },
   {
     slug: "blog",
@@ -64,10 +74,12 @@ export const projects: readonly Project[] = [
     tags: ["Next.js", "PostgreSQL", "TipTap", "Resend"],
     cover: {
       src: "/images/work/blog.webp",
-      alt: "Stacked blocks of text set as tone, under a vermilion rule.",
-      width: 1600,
-      height: 1100,
+      plate: "/images/work/blog-plate.webp",
+      alt: "The blog home: a serif headline reading \u201cThe real experience of learning tech as a student\u201d above a grid of article cards.",
+      width: 2400,
+      height: 1650,
     },
+    live: "https://chijioke.app",
   },
   {
     slug: "picpress",
@@ -80,10 +92,12 @@ export const projects: readonly Project[] = [
     tags: ["React", "Next.js", "Client-side", "PDF"],
     cover: {
       src: "/images/work/picpress.webp",
-      alt: "Nested frames collapsing inward onto a vermilion bar.",
-      width: 1600,
-      height: 1100,
+      plate: "/images/work/picpress-plate.webp",
+      alt: "PicPress on warm paper: \u201cTwelve phone photos. A 248MB PDF.\u201d beside a before-and-after file-size readout.",
+      width: 2400,
+      height: 1650,
     },
+    live: "https://benevolent-figolla-7f76d9.netlify.app",
   },
   {
     slug: "precious-and-emmanuel",
@@ -96,10 +110,12 @@ export const projects: readonly Project[] = [
     tags: ["Next.js", "Backend", "RSVP system"],
     cover: {
       src: "/images/work/precious-and-emmanuel.webp",
-      alt: "Two interlocking rings, their overlap drawn in vermilion.",
-      width: 1600,
-      height: 1100,
+      plate: "/images/work/precious-and-emmanuel-plate.webp",
+      alt: "Precious and Emmanuel's wedding site: the couple photographed under a floral arch, their names set over the picture in a high-contrast serif.",
+      width: 2400,
+      height: 1650,
     },
+    live: "https://emmanuel-precious.vercel.app",
   },
 ];
 
