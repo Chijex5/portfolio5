@@ -120,6 +120,36 @@ export default function Hero() {
           as="h1"
           immediate
           stagger={0.09}
+          // The kinetic pass: the headline thickens and softens as the hero
+          // leaves, in step with the drift and fade already on this wrapper — so
+          // it reads as the type condensing on its way out rather than a separate
+          // effect happening nearby.
+          //
+          // start/end are the section's own exit rather than the default "pass
+          // through the viewport", because at scroll 0 the h1 is already past the
+          // default start and would load halfway through its own morph.
+          //
+          // Tracking tightens by more em than the weight gain adds width, which
+          // keeps the line monotonically narrower: SplitText masks are sized to
+          // the lines they were built from, so a line that *grew* enough to rewrap
+          // would shift the layout.
+          //
+          // The resting end is deliberately not the extreme: Fraunces at opsz 144
+          // and a light weight draws the bar of an 'e' so fine that at this size it
+          // reads as a 'c'. The thin, high-contrast cut is the *destination*, where
+          // the headline is also drifting away and dropping to 20% opacity — never
+          // the state a first-time visitor has to read.
+          kinetic={{
+            wght: [430, 820],
+            opsz: [72, 144],
+            soft: [0, 70],
+            tracking: [-0.02, -0.055],
+            start: "top top",
+            end: "bottom top",
+          }}
+          // The tracking class stays: the kinetic tween writes letter-spacing
+          // inline (which wins), so this is what reduced-motion and no-JS get, and
+          // it matches the tween's starting value exactly.
           className="font-display text-[clamp(2.5rem,11.5vw,10rem)] leading-[0.94] tracking-[-0.02em]"
         >
           <span className="block">I build web </span>

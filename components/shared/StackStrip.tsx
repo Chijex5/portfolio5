@@ -7,8 +7,9 @@ const PASSES = 2;
 /**
  * Full-bleed capability strip between the hero and the work.
  *
- * Server component — the scroll it does is a CSS animation, and the plan's
- * velocity-reactive version arrives with the shared velocity store in M7.
+ * Stays a server component: the marquee it renders is a client component that
+ * SSRs its CSS loop and only upgrades to the velocity-reactive one after
+ * hydration, so there's nothing here that needs the browser.
  */
 export default function StackStrip() {
   return (

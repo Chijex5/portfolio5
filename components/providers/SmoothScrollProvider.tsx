@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { ReactLenis, useLenis, type LenisRef } from "lenis/react";
+import VelocityProvider from "@/components/providers/VelocityProvider";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { LENIS } from "@/lib/tokens";
 
@@ -46,6 +47,7 @@ export default function SmoothScrollProvider({
     >
       {children}
       <ScrollTriggerBridge />
+      <VelocityProvider />
     </ReactLenis>
   );
 }

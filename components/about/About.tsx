@@ -35,6 +35,15 @@ export default function About() {
         <div className="md:col-span-8">
           <SplitReveal
             as="p"
+            // Thin and text-like when it enters, display-weight by the time it
+            // leaves — the default start/end span this block's whole pass through
+            // the viewport, so the morph *is* the scroll transition.
+            kinetic={{
+              wght: [300, 640],
+              opsz: [24, 144],
+              soft: [0, 80],
+              tracking: [-0.01, -0.04],
+            }}
             className="font-display text-[clamp(1.625rem,3.4vw,2.75rem)] leading-[1.12] tracking-[-0.01em]"
           >
             I like owning the whole picture — schema, API, and the interface on

@@ -1,12 +1,16 @@
 import WorkRow from "@/components/work/WorkRow";
+import WorkShowreel from "@/components/work/WorkShowreel";
 import { projects } from "@/lib/projects";
 
 /**
  * Selected work (plan §6, M5).
  *
- * A static, server-rendered list — this is the layout the WebGL carousel (M6–M9)
- * enhances on top of, and the one that keeps working for reduced-motion, no-JS and
- * no-WebGL visitors. Content lives in lib/projects.ts.
+ * A static, server-rendered list — this is the layout the WebGL carousel enhances
+ * on top of, and the one that keeps working for reduced-motion, no-JS and no-WebGL
+ * visitors. Content lives in lib/projects.ts.
+ *
+ * The showreel band goes above the list, not instead of it: the carousel is the
+ * flourish, the numbered rows are the record.
  */
 export default function Work() {
   const count = String(projects.length).padStart(2, "0");
@@ -24,6 +28,8 @@ export default function Work() {
           ({count})
         </p>
       </header>
+
+      <WorkShowreel projects={projects} />
 
       <ol>
         {projects.map((project, i) => (

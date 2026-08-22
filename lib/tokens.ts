@@ -16,11 +16,25 @@ export const EASE_GSAP = "expo.out";
 
 export const MAGNET = {
   max: 12, // px cap for magnetic pull (header + footer CTA)
+  /** Extra px the element overshoots along the cursor's direction of travel. */
+  overshoot: 10,
+  /** Peak scaleX added at full cursor speed — the "liquid" stretch. */
+  stretch: 0.14,
+  /** Peak skewX in degrees at full cursor speed. */
+  skew: 5,
 } as const;
 
 // Every non-essential animation is gated behind this query via gsap.matchMedia,
 // which also tears the animation down (and reverts it) if the preference changes.
 export const MOTION_OK = "(prefers-reduced-motion: no-preference)";
+
+/**
+ * Cursor-follow affordances (magnets, tilt, sheen) only exist where there *is* a
+ * cursor: on touch, a tap fires pointermove once and leaves the element stuck
+ * wherever that put it.
+ */
+export const HOVER_OK =
+  "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)";
 
 export const REVEAL = {
   // Fire when the element's top passes 85% of the viewport height: far enough in
@@ -40,5 +54,75 @@ export const LENIS = {
 } as const;
 
 export const VELOCITY = {
-  damp: 0.06, // per-frame lerp toward 0 after scroll/drag release (carousel)
+  /** Per-frame decay toward rest after scroll / pointer / drag release. */
+  damp: {
+    scroll: 0.06,
+    pointer: 0.12,
+    /** Carousel inertia: lower = longer glide. */
+    carousel: 0.055,
+  },
+  /** Input value that counts as "flat out" — the divisor that normalises to 1. */
+  norm: {
+    scroll: 45, // px/frame of page scroll
+    pointer: 26, // px/frame of cursor travel
+    carousel: 34, // px/frame of track travel
+  },
+} as const;
+
+/**
+ * Variable-font axis ranges for kinetic type. Fraunces carries wght 100–900,
+ * opsz 9–144, SOFT 0–100 and WONK 0–1 (see the `axes` array passed to
+ * next/font in app/layout.tsx — extra axes are opt-in).
+ */
+export const AXES = {
+  wght: { min: 100, max: 900 },
+  opsz: { min: 9, max: 144 },
+  soft: { min: 0, max: 100 },
+  wonk: { min: 0, max: 1 },
+} as const;
+
+/**
+ * Velocity-reactive marquee. The strip loops on its own, speeds up with page
+ * scroll, and runs backwards when the page does.
+ */
+export const MARQUEE = {
+  /** Extra loop speed at full scroll velocity, as a multiple of the base rate. */
+  boost: 3.2,
+} as const;
+
+export const CAROUSEL = {
+  /** Slide aspect ratio (w / h). */
+  aspect: 1.34,
+  /** Gap between plates, px. */
+  gap: 32,
+  /** Idle drift in px/frame, so the track is never fully dead. */
+  drift: 0.42,
+  /** How much page-scroll velocity bleeds into the track. */
+  scrollBleed: 0.55,
+  /** Seconds for the track to settle back to its drift speed after a flick. */
+  snap: 1.1,
+  /** Peak z-displacement in px at full velocity — the liquid bend. */
+  bend: 190,
+  /** Peak RGB split in UV units at full velocity. */
+  split: 0.028,
+  /** Scale a plate reaches on hover / focus. */
+  hoverScale: 1.075,
+} as const;
+
+/**
+ * Work-row interaction. The list below the carousel is the same idea in DOM: the
+ * cover parallaxes inside its frame, skews with page velocity, and expands out to
+ * the frame edge when you point at it.
+ */
+export const ROW = {
+  /** Peak skewY in degrees taken from page-scroll velocity. */
+  skew: 2.6,
+  /** Peak parallax travel for the cover, as % of its own height. */
+  parallax: 8,
+  /** Peak parallax travel for the background numeral, % of its own height. */
+  numeral: -26,
+  /** Degrees of cursor-tracked tilt on a plate. */
+  tilt: 5,
+  /** Inset % the cover rests at before hover expands it to the frame edge. */
+  inset: 5.5,
 } as const;

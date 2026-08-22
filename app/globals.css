@@ -83,8 +83,113 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
+ * Kinetic type — registered axis properties
+ *
+ * `font-variation-settings` takes a string, and strings don't interpolate. So the
+ * axes live in typed custom properties instead: `@property` gives each one a
+ * `<number>` syntax, which means the browser (and GSAP's CSSPlugin) can animate it
+ * as a number and substitute the result into the declaration below.
+ *
+ * `inherits: true` matters. SplitText rewraps a headline into per-line children, so
+ * whatever drives the morph has to reach text that didn't exist when the page
+ * loaded. `font-variation-settings` is itself an inherited property, so one
+ * declaration on the element covers every line inside it.
+ *
+ * Initial values are the resting cut: 400 at optical size 48, no softness, no
+ * wonk. That is what no-JS and reduced-motion visitors see, and it is a finished
+ * heading rather than a half-played animation.
+ * ------------------------------------------------------------------ */
+@property --wght {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 400;
+}
+@property --opsz {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 48;
+}
+@property --soft {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --wonk {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* Cursor position within a plate, as a fraction of its box. Written by the
+   pointermove handler in WorkRow, read by `.plate-sheen` — which is a child, so
+   these have to inherit. */
+@property --mx {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 50%;
+}
+@property --my {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 50%;
+}
+
+/* 0..1 cursor speed, published by MagneticButton every frame. */
+@property --magnet-speed {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* Put `.kinetic` on the type element itself, never on a wrapper: the declaration
+   is inherited, and `"wght"` in font-variation-settings outranks `font-weight`, so
+   a container would flatten the weight of every label nested inside it.
+
+   Axis order matches AXIS_VARS in lib/kinetic.ts. */
+.kinetic {
+  font-variation-settings:
+    "wght" var(--wght),
+    "opsz" var(--opsz),
+    "SOFT" var(--soft),
+    "WONK" var(--wonk);
+}
+
+/* ------------------------------------------------------------------ *
  * Component motion (CSS-only — no GSAP needed at this scale)
  * ------------------------------------------------------------------ */
+
+/* Magnetic buttons: GSAP owns the transform, CSS owns the lift. At rest the
+   shadow has zero size and zero alpha, so this costs nothing until the cursor
+   actually moves — then the button reads as peeling off the paper.
+   The child, not the wrapper, because the wrapper is the element being tweened
+   and a filter on it would force the shadow to be re-rasterised every frame. */
+.magnet > * {
+  filter: drop-shadow(
+    0 calc(var(--magnet-speed) * 6px) calc(var(--magnet-speed) * 14px)
+      color-mix(
+        in oklab,
+        var(--ink) calc(var(--magnet-speed) * 26%),
+        transparent
+      )
+  );
+}
+
+/* Plate sheen: a soft highlight that tracks the cursor across a work cover. The
+   gradient is the whole effect — JS only writes --mx/--my. */
+.plate-sheen {
+  background: radial-gradient(
+    28rem circle at var(--mx) var(--my),
+    color-mix(in oklab, var(--paper) 42%, transparent),
+    transparent 46%
+  );
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-out-expo);
+}
+
+[data-plate]:hover .plate-sheen {
+  opacity: 1;
+}
 
 /* Marquee: the track holds two copies of its content, so -50% lands the second
    copy exactly where the first began. Duration comes from the component. */
@@ -163,5 +268,15 @@ body {
   .status-dot,
   .scroll-cue {
     animation: none;
+  }
+
+  /* Both of these are lit by cursor-tracking JS that doesn't run here, so
+     without this they'd hover as a centred blob and a shadow that never moves. */
+  .plate-sheen {
+    display: none;
+  }
+
+  .magnet > * {
+    filter: none;
   }
 }

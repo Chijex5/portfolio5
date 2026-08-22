@@ -2,7 +2,9 @@
 
 import { useRef } from "react";
 import { gsap, SplitText, useGSAP } from "@/lib/gsap";
+import { applyKinetic, type KineticSpec } from "@/lib/kinetic";
 import { DURATION, EASE_GSAP, MOTION_OK, REVEAL } from "@/lib/tokens";
+import { cn } from "@/lib/utils";
 
 type SplitRevealProps = {
   children: React.ReactNode;
@@ -13,6 +15,15 @@ type SplitRevealProps = {
   delay?: number;
   /** Play on mount instead of on scroll. For above-the-fold copy. */
   immediate?: boolean;
+  /**
+   * Also morph the variable-font axes across this block's scroll pass.
+   *
+   * Applied to the root element, not the split lines: `font-variation-settings`
+   * inherits, so one declaration reaches every line SplitText creates — and the
+   * axis tween survives the re-splits `autoSplit` triggers, which a per-line
+   * tween would not.
+   */
+  kinetic?: KineticSpec;
 };
 
 /**
@@ -34,8 +45,9 @@ export default function SplitReveal({
   stagger = 0.08,
   delay = 0,
   immediate = false,
+  kinetic,
 }: SplitRevealProps) {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -71,14 +83,21 @@ export default function SplitReveal({
             return gsap.from(self.lines, vars);
           },
         });
+
+        if (kinetic) applyKinetic(el, kinetic);
       });
     },
     { dependencies: [stagger, delay, immediate], revertOnUpdate: true },
   );
 
-  const Tag = as as React.ElementType;
+  // The tag is polymorphic at runtime, so the type system gets told about one
+  // concrete element. Casting to `React.ElementType` instead collapses the props
+  // of every intrinsic element down to their intersection, which is `never` —
+  // hence no `className`, no `ref`, no children.
+  const Tag = as as "div";
+
   return (
-    <Tag ref={ref} className={className}>
+    <Tag ref={ref} className={cn(kinetic && "kinetic", className)}>
       {children}
     </Tag>
   );

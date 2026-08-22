@@ -5,8 +5,16 @@ import Header from "@/components/layout/Header";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import "./globals.css";
 
+// Fraunces is the kinetic typeface, so it needs more than the weight axis. Google
+// serves only `wght` by default; the extra three are opt-in per axis, and without
+// them `font-variation-settings: "opsz" …` in `.kinetic` would silently do nothing.
+//   SOFT 0–100  roundness of the terminals
+//   WONK 0–1    swaps in the alternate, wonkier italic-ish forms
+//   opsz 9–144  optical size: low is spindly and fine, high is fat and contrasty
+// Ranges mirror AXES in lib/tokens.ts, which is what clamps the tween values.
 const fraunces = Fraunces({
   subsets: ["latin"],
+  axes: ["SOFT", "WONK", "opsz"],
   variable: "--font-fraunces",
   display: "swap",
 });
