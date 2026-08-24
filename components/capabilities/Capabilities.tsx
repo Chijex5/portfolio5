@@ -2,15 +2,9 @@
 
 import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
-import { applyKinetic, attachKineticHover } from "@/lib/kinetic";
+import { applyKinetic } from "@/lib/kinetic";
 import { CAPABILITIES } from "@/lib/nav";
-import {
-  COMPOSE,
-  DURATION,
-  EASE_GSAP,
-  HOVER_OK,
-  MOTION_OK,
-} from "@/lib/tokens";
+import { COMPOSE, EASE_GSAP, FIELD, MOTION_OK } from "@/lib/tokens";
 import { getVelocity } from "@/lib/velocity";
 
 /**
@@ -80,19 +74,25 @@ function seedSigned(text: string, salt: string): number {
  *
  * Three things want to move a tool, so they are given three different nodes:
  *
- *   <li  data-cap-item>           the velocity smear (ticker, writes `transform`)
- *     <span data-cap-item-inner>  the compose (`x`/`yPercent`/`rotate`) and the
- *                                 hover lift (`y`)
+ *   <li  data-cap-item>           the field: spring offset, scale, proximity
+ *                                 weight, and the compose-time smear — all in one
+ *                                 `transform` string from one loop
+ *     <span data-cap-item-inner>  the compose: `x` / `yPercent` / `rotate` /
+ *                                 `opacity`, from the scrubbed timeline
  *
- * The compose and the hover do share that inner span, which is safe only because
- * they use different transform components: GSAP tracks `y` and `yPercent`
- * separately, so the lift can move an item that the compose has already placed,
- * and scrolling back up cannot erase the lift. Both in px would be two writers on
- * one property.
+ * Two elements, two writers, no overlap: the compose places a tool and the field
+ * pushes whatever the compose has placed. There is no per-item hover tween at all
+ * any more — proximity replaced it, which is strictly better, because a hover
+ * listener cannot fire until the cursor is already on the target and so can never
+ * produce a field.
  *
- * The axis morph is declared on the enclosing `[data-cap-list]`, where it is
- * inherited — which also lets a per-item hover morph override it via ordinary
- * cascade instead of the two fighting over one custom property.
+ * Weight cascades in three layers, each overriding the last through ordinary CSS
+ * inheritance rather than by fighting: `.kinetic` declares
+ * `font-variation-settings` on the list, `applyKinetic` animates the list's
+ * `--wght` as the row crosses the viewport (the resting base), and the field sets
+ * `--wght` on individual items when the cursor is near them. Because an inherited
+ * declaration resolves its `var()` against the element it lands on, setting the
+ * variable on an item is enough to change that item alone.
  */
 export default function Capabilities() {
   const root = useRef<HTMLElement>(null);
@@ -225,96 +225,238 @@ export default function Capabilities() {
           }
         });
 
-        // ── The smear ────────────────────────────────────────────────────────
+        // ── The field ────────────────────────────────────────────────────────
         //
-        // A fast flick drags the type as it lands, which is the same liquid
-        // language the elastic bands and work rows speak — read from the same
-        // shared store, so every part of the page agrees about how fast the
-        // scroll is at a given instant.
+        // One loop, one writer per element, and it owns everything continuous:
+        // the cursor's proximity pull, the spring that carries it, and the
+        // scroll-velocity smear during the compose. Folding them together is not
+        // tidiness — three separate loops would each want to write the same
+        // element's `transform`, which is the desync this codebase avoids
+        // everywhere else.
         //
-        // Only while composing. Once the timeline is done the loop writes nothing
-        // at all, so a settled section costs a comparison per frame and no style
-        // churn — the idle-out discipline ElasticProvider and LiquidLens use.
+        // The `<li>` is the field's element. The compose owns the inner `<span>`,
+        // so the two never collide: the compose places a tool, the field pushes
+        // whatever the compose has placed.
         const trigger = timeline.scrollTrigger;
         const items = gsap.utils.toArray<HTMLElement>(
           "[data-cap-item]",
           section,
         );
-        const written = new WeakMap<HTMLElement, string>();
 
-        const smear = () => {
+        /**
+         * Per-item spring state. `cx`/`cy` are document-space centres, cached
+         * rather than measured per frame — sixteen `getBoundingClientRect()` calls
+         * every frame would force a synchronous layout sixty times a second, which
+         * is exactly the cost this section was just rescued from. Converting a
+         * cached document centre to viewport space needs only `scrollY`, which is
+         * free to read.
+         */
+        const springs = items.map((el) => ({
+          el,
+          cx: 0,
+          cy: 0,
+          x: 0,
+          y: 0,
+          vx: 0,
+          vy: 0,
+          influence: 0,
+          written: "",
+          writtenWght: -1,
+        }));
+
+        const measure = () => {
+          for (const s of springs) {
+            const r = s.el.getBoundingClientRect();
+            s.cx = r.left + r.width / 2 + window.scrollX;
+            s.cy = r.top + r.height / 2 + window.scrollY;
+          }
+        };
+        measure();
+
+        // Re-measured on resize and once the webfont has swapped, both of which
+        // move every centre. Not on scroll: scrolling is what `scrollY` is for.
+        const observer = new ResizeObserver(measure);
+        observer.observe(section);
+        document.fonts?.ready.then(measure).catch(() => {});
+
+        // Cursor in document space, or null when it is nowhere near.
+        let px = 0;
+        let py = 0;
+        let pointerLive = false;
+
+        const onPointerMove = (event: PointerEvent) => {
+          px = event.clientX + window.scrollX;
+          py = event.clientY + window.scrollY;
+          pointerLive = true;
+        };
+        // Only fine pointers get the follow. On touch a move event is a drag, and
+        // tracking it would leave the field frozen wherever the finger lifted.
+        const onPointerDown = (event: PointerEvent) => {
+          if (event.pointerType === "mouse") return;
+          const tx = event.clientX + window.scrollX;
+          const ty = event.clientY + window.scrollY;
+          // A tap is an impulse, not a position: kick the neighbours and let the
+          // springs carry it, so touch gets the same physicality without a cursor.
+          for (const s of springs) {
+            const dx = s.cx - tx;
+            const dy = s.cy - ty;
+            const dist = Math.hypot(dx, dy);
+            if (dist > FIELD.radius) continue;
+            const t = 1 - dist / FIELD.radius;
+            const norm = dist || 1;
+            s.vx += (dx / norm) * FIELD.impulse * t;
+            s.vy += (dy / norm) * FIELD.impulse * t;
+          }
+        };
+        const onPointerLeave = () => {
+          pointerLive = false;
+        };
+
+        window.addEventListener("pointermove", onPointerMove, {
+          passive: true,
+        });
+        window.addEventListener("pointerdown", onPointerDown, {
+          passive: true,
+        });
+        document.addEventListener("pointerleave", onPointerLeave);
+
+        const tick = (_time: number, deltaTime: number) => {
+          // Two different clamps, because the spring needs a tighter one than
+          // anything else here.
+          //
+          // A spring integrated with a large timestep does not merely go slower,
+          // it goes *wrong*: `Math.pow(damping, frames)` is applied once per tick,
+          // so at 20 frames' worth of delta it multiplies velocity by 0.74^20 ≈
+          // 0.002 and the item crawls instead of converging. Measured under a
+          // throttled rAF (~3fps) an item sat at -0.54px indefinitely — invisible,
+          // but enough to keep a transform and a raster layer alive forever.
+          //
+          // So the integration step is capped at two frames and simply catches up
+          // over several ticks. A slow device gets a slightly lazier spring rather
+          // than one that never arrives.
+          const rawFrames = Math.min(deltaTime, 50) / (1000 / 60);
+          const frames = Math.min(rawFrames, 2);
+
+          // The smear only exists while the compose is running, and fades out with
+          // it, so it can never outlive the motion it is smearing.
           const progress = trigger?.progress ?? 1;
           const composing = progress > 0 && progress < 1;
-          const scroll = composing ? getVelocity().scroll : 0;
+          const smear = composing
+            ? getVelocity().scroll * COMPOSE.smearLag * (1 - progress)
+            : 0;
+          const skew = composing
+            ? -getVelocity().scroll * COMPOSE.smearSkew * (1 - progress)
+            : 0;
 
-          // Fades out as the compose completes, so the smear cannot outlive the
-          // motion it is meant to be smearing.
-          const weight = composing ? 1 - progress : 0;
-          const lag = scroll * COMPOSE.smearLag * weight;
-          const skew = -scroll * COMPOSE.smearSkew * weight;
+          for (const s of springs) {
+            let targetX = 0;
+            let targetY = 0;
+            let influence = 0;
 
-          for (const item of items) {
+            if (pointerLive) {
+              const dx = px - s.cx;
+              const dy = py - s.cy;
+              const dist = Math.hypot(dx, dy);
+              if (dist < FIELD.radius) {
+                // Squared falloff: a linear one spreads the response evenly over
+                // the whole radius and reads as everything drifting at once. This
+                // keeps the effect concentrated on what the cursor is actually near.
+                const t = 1 - dist / FIELD.radius;
+                influence = t * t;
+                const norm = dist || 1;
+                targetX = (dx / norm) * FIELD.pull * influence;
+                targetY =
+                  (dy / norm) * FIELD.pull * influence - FIELD.lift * influence;
+              }
+            }
+
+            // Integrate. Velocity is damped by a power of the frame count so the
+            // decay is identical at 60Hz and 144Hz.
+            s.vx += (targetX - s.x) * FIELD.stiffness * frames;
+            s.vy += (targetY - s.y) * FIELD.stiffness * frames;
+            s.vx *= Math.pow(FIELD.damping, frames);
+            s.vy *= Math.pow(FIELD.damping, frames);
+            s.x += s.vx * frames;
+            s.y += s.vy * frames;
+            s.influence += (influence - s.influence) * 0.2 * rawFrames;
+
+            // Snapped, not merely close, and deliberately *not* gated on
+            // `settled` — that was the bug. `settled` requires |x| < rest, so an
+            // item resting at 0.54px could never satisfy the very condition that
+            // would have cleared it. With no influence at all and less than a
+            // pixel to go, there is nothing left worth animating.
+            if (
+              influence === 0 &&
+              Math.abs(s.x) < 1 &&
+              Math.abs(s.y) < 1 &&
+              Math.abs(s.vx) < 1 &&
+              Math.abs(s.vy) < 1
+            ) {
+              s.x = 0;
+              s.y = 0;
+              s.vx = 0;
+              s.vy = 0;
+              s.influence = 0;
+            }
+
+            const settled =
+              Math.abs(s.x) < FIELD.rest &&
+              Math.abs(s.y) < FIELD.rest &&
+              Math.abs(s.vx) < FIELD.rest &&
+              Math.abs(s.vy) < FIELD.rest &&
+              s.influence < 0.004;
+
+            // Cleared outright when settled, so a resting item carries no
+            // transform, no raster layer, and no stacking context.
             const transform =
-              Math.abs(lag) < 0.05
+              settled && Math.abs(smear) < 0.05
                 ? ""
-                : `translate3d(0, ${lag.toFixed(2)}px, 0) skewY(${skew.toFixed(3)}deg)`;
-            if (written.get(item) === transform) continue;
-            written.set(item, transform);
-            item.style.transform = transform;
+                : `translate3d(${s.x.toFixed(2)}px, ${(s.y + smear).toFixed(2)}px, 0)` +
+                  ` scale(${(1 + s.influence * FIELD.scale).toFixed(4)})` +
+                  (skew ? ` skewY(${skew.toFixed(3)}deg)` : "");
+
+            if (s.written !== transform) {
+              s.written = transform;
+              s.el.style.transform = transform;
+              s.el.style.willChange = transform ? "transform" : "";
+            }
+
+            // Weight tracks proximity, rounded so a resting item is not handed a
+            // fresh font-variation-settings string — and therefore re-rasterised —
+            // on every frame for a value that has not visibly changed.
+            const wght = Math.round(340 + s.influence * (FIELD.peakWght - 340));
+            if (s.writtenWght !== wght) {
+              s.writtenWght = wght;
+              if (s.influence < 0.002) {
+                // Handed back to the list's own scroll morph, which is the base.
+                s.el.style.removeProperty("--wght");
+                s.el.style.removeProperty("--opsz");
+              } else {
+                s.el.style.setProperty("--wght", String(wght));
+                s.el.style.setProperty(
+                  "--opsz",
+                  String(Math.round(24 + s.influence * (FIELD.peakOpsz - 24))),
+                );
+              }
+            }
           }
         };
 
-        gsap.ticker.add(smear);
+        gsap.ticker.add(tick);
 
         return () => {
-          gsap.ticker.remove(smear);
-          for (const item of items) item.style.transform = "";
+          gsap.ticker.remove(tick);
+          observer.disconnect();
+          window.removeEventListener("pointermove", onPointerMove);
+          window.removeEventListener("pointerdown", onPointerDown);
+          document.removeEventListener("pointerleave", onPointerLeave);
+          for (const s of springs) {
+            s.el.style.transform = "";
+            s.el.style.willChange = "";
+            s.el.style.removeProperty("--wght");
+            s.el.style.removeProperty("--opsz");
+          }
         };
-      });
-
-      // Per-item hover is cursor-only: on touch there is no hover state to
-      // return from, and a tap would leave one tool permanently bold.
-      mm.add(HOVER_OK, () => {
-        const items = gsap.utils.toArray<HTMLElement>(
-          "[data-cap-item]",
-          section,
-        );
-        const teardowns = items.map((item) => {
-          const inner = item.querySelector<HTMLElement>(
-            "[data-cap-item-inner]",
-          );
-          if (!inner) return () => {};
-
-          const morph = attachKineticHover(
-            inner,
-            { wght: [520, 800], opsz: [96, 144], soft: [0, 45] },
-            DURATION.base,
-          );
-          const lift = gsap.quickTo(inner, "y", {
-            duration: DURATION.base,
-            ease: EASE_GSAP,
-          });
-
-          const enter = () => {
-            morph.play();
-            lift(-4);
-          };
-          const leave = () => {
-            morph.reverse();
-            lift(0);
-          };
-
-          item.addEventListener("pointerenter", enter);
-          item.addEventListener("pointerleave", leave);
-          return () => {
-            item.removeEventListener("pointerenter", enter);
-            item.removeEventListener("pointerleave", leave);
-            morph.kill();
-            gsap.set(inner, { y: 0 });
-          };
-        });
-
-        return () => teardowns.forEach((fn) => fn());
       });
     },
     { scope: root },

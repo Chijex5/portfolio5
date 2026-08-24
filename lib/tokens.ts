@@ -233,6 +233,75 @@ export const COMPOSE = {
 } as const;
 
 /**
+ * Capabilities: the proximity field.
+ *
+ * The compose (COMPOSE, above) is an entrance — it plays once and stops. This is
+ * what makes the section stay alive afterwards, and it is the part that was
+ * missing: every reference for a section like this (paco.me, toyfight.net) responds
+ * *whenever the cursor is near*, rather than performing once on scroll and going
+ * inert.
+ *
+ * Two things make it feel physical rather than eased:
+ *
+ *   - **Proximity, not hover.** One document-level pointer listener and a distance
+ *     falloff, so a tool reacts before the cursor reaches it and the nearest one
+ *     always reacts hardest. An element-scoped `mouseenter` cannot do this — it
+ *     only fires once you are already on top of the thing, which is why hover
+ *     magnetism feels like a state change and this feels like a field.
+ *   - **A real spring.** Each item integrates its own position and velocity
+ *     against a target, so it overshoots and settles. A tween cannot: an easing
+ *     curve is a fixed path to a known endpoint, and the endpoint here changes
+ *     every frame the cursor moves.
+ *
+ * Cheap on purpose: sixteen springs is a few multiplications each, inside the one
+ * GSAP ticker the whole site already runs, and the loop stops writing entirely once
+ * everything has settled and the cursor has left.
+ */
+export const FIELD = {
+  /**
+   * px of influence around the cursor.
+   *
+   * 360, not 200. Measured at 200 exactly one item of sixteen ever responded,
+   * which makes this a hover effect wearing a field's clothes — these are display
+   * type at up to 2.75rem, so neighbouring tools sit 200–300px apart centre to
+   * centre and every one of them fell outside the radius. At 360 three or four
+   * react at once with a visible gradient between them, which is the whole point
+   * of "nearest strongest".
+   */
+  radius: 360,
+  /** px an item at the centre of the field leans toward the cursor. */
+  pull: 22,
+  /** px of additional upward lift at full influence — the field reads as a rise. */
+  lift: 9,
+  /** Extra scale at full influence. Small: this is type, and type distorts badly. */
+  scale: 0.055,
+  /** Weight the nearest item reaches. The list's own morph is the resting base. */
+  peakWght: 760,
+  /** Optical size at full influence, matching the weight gain. */
+  peakOpsz: 132,
+  /**
+   * Spring constants, per frame at 60fps and delta-scaled at runtime.
+   * `stiffness` is the pull toward target; `damping` is retained velocity, so
+   * lower damps harder. These two are the entire feel — 0.16/0.74 overshoots just
+   * enough to read as mass without wobbling like jelly.
+   */
+  stiffness: 0.16,
+  damping: 0.74,
+  /** px/frame kick given to nearby items by a tap, so touch is not a dead surface. */
+  impulse: 40,
+  /**
+   * Below this, in px and px/frame, an item counts as settled.
+   *
+   * 0.15 rather than 0.05: a spring approaches zero asymptotically, so too tight a
+   * threshold is never met and the item keeps a transform, a raster layer and a
+   * weight override forever. Measured at 0.05, one item stayed displaced and kept
+   * its `--wght` after the cursor had left the section entirely. On settling, state
+   * is snapped to exactly zero rather than left near it.
+   */
+  rest: 0.15,
+} as const;
+
+/**
  * Work-row interaction. The list below the carousel is the same idea in DOM: the
  * cover parallaxes inside its frame, skews with page velocity, and expands out to
  * the frame edge when you point at it.
