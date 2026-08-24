@@ -49,8 +49,21 @@ export const HEADER = {
 } as const;
 
 export const LENIS = {
-  lerp: 0.1,
-  duration: 1.2,
+  /**
+   * Smoothing intensity, 0–1: how much of the remaining distance the page covers
+   * each frame. Higher is more responsive, lower is floatier.
+   *
+   * 0.16, not 0.1. At 0.1 the page covers a tenth of the gap per frame, which is
+   * ~40 frames to visually settle — long enough that the page reads as sliding on
+   * ice and as lagging behind the wheel. 0.16 still smooths (nothing snaps) but
+   * the page starts moving with your hand rather than after it.
+   *
+   * There is deliberately no `duration` here. Lenis treats `lerp` and `duration`
+   * as mutually exclusive — `duration` is ignored whenever `lerp` is set — so the
+   * `duration: 1.2` that used to sit alongside this was dead config that read as a
+   * second, contradictory setting for the same behaviour.
+   */
+  lerp: 0.16,
 } as const;
 
 export const VELOCITY = {
@@ -98,15 +111,27 @@ export const AXES = {
 export const ELASTIC = {
   /** Peak skewY in degrees — the shear that reads as the page catching up. */
   skew: 1.9,
-  /** Peak scaleY stretch along the direction of travel. */
-  stretch: 0.045,
-  /** Fraction of the stretch taken back off the x axis, so volume looks kept. */
-  pinch: 0.55,
   /** Peak px a band lags behind the scroll, before its own multiplier. */
   lag: 26,
   /** Ceiling on any single band's multiplier, so no `data-elastic` typo folds it. */
   maxIntensity: 3,
 } as const;
+
+/**
+ * `stretch` and `pinch` used to live in ELASTIC: a ~4.5% scaleY along the
+ * direction of travel with a counter-scale on x, to suggest volume.
+ *
+ * They are gone because they were the single most expensive thing on the page.
+ * `translate` and `skew` are composited — the GPU moves an already-rasterised
+ * layer. `scale` is not: changing it forces the browser to re-rasterise the
+ * band's entire contents at the new size, and these bands are full-height
+ * sections of large text. Six of them, re-rastering every frame of every scroll,
+ * is what made scrolling feel laggy.
+ *
+ * The lean and the lag do all the visible work anyway; the squash was under 5%
+ * and only ever reached at peak velocity, so removing it costs almost nothing to
+ * look at and buys back the frame budget.
+ */
 
 /**
  * The cursor lens: a soft warm highlight that trails the pointer and stretches
@@ -142,6 +167,69 @@ export const CAROUSEL = {
   split: 0.028,
   /** Scale a plate reaches on hover / focus. */
   hoverScale: 1.075,
+  /**
+   * Click-to-expand (plan §6.7). The plate's picture grows from its own on-screen
+   * rect to full bleed, then the route changes underneath it.
+   *
+   * `expand` is the growth; `hold` is how long the full-bleed frame sits there
+   * before `router.push`. The hold is not padding — it is what kills the seam. The
+   * case study renders its own cover at the same aspect, so landing while the
+   * overlay is still opaque means the swap happens behind a still image and there
+   * is no frame in which neither is drawn.
+   */
+  expand: 0.72,
+  hold: 0.12,
+} as const;
+
+/**
+ * Capabilities: "the type is composed".
+ *
+ * The 16 tool names arrive as loose letterpress sorts and get set into their four
+ * rows as the section scrolls. Every number here is a *starting* displacement —
+ * the destination is always the element's own laid-out position, which is why the
+ * reduced-motion and no-JS state is the finished layout with nothing to undo.
+ *
+ * Displacements are derived from each item's index within its group and each
+ * group's index within the section — never from a measured rect. That is
+ * deliberate: a measured convergence point goes stale the moment Fraunces swaps
+ * in or the viewport resizes, and re-measuring means reading layout inside an
+ * animation. Index-derived offsets are correct at any width, need no refresh
+ * hook, and still converge in the right direction, because an item's index
+ * already tells you which side of its row it sits on.
+ */
+export const COMPOSE = {
+  /** px an item at the end of a row starts displaced toward that row's centre. */
+  gatherX: 190,
+  /** px of deterministic per-item horizontal jitter. */
+  jitterX: 44,
+  /**
+   * Vertical displacement, as a percentage of the item's own height rather than
+   * px — and that unit is load-bearing, not a preference.
+   *
+   * The hover lift writes `y` on this same element. GSAP keeps `y` and `yPercent`
+   * as separate components of one transform, so the compose can own `yPercent`
+   * while the hover owns `y` and neither ever clobbers the other. Both in px
+   * would be two writers on one property: hovering mid-compose would fight, and
+   * scrolling back up would erase the lift.
+   *
+   * Being relative to the text's own size is a bonus — the scatter keeps its
+   * proportions as the type scales with the viewport.
+   */
+  gatherYPercent: 260,
+  /** Per-item vertical jitter, same units as `gatherYPercent`. */
+  jitterYPercent: 90,
+  /** Peak rotation in degrees, plus or minus. Small: these are sorts, not confetti. */
+  rotate: 6,
+  /**
+   * Opacity floor at full scatter. Deliberately not near zero — items stay
+   * readable in flight, so stopping mid-scroll shows a loose arrangement of words
+   * rather than a smear of grey.
+   */
+  minOpacity: 0.45,
+  /** Peak px of extra lag taken from scroll velocity while composing. */
+  smearLag: 30,
+  /** Peak skewY in degrees taken from scroll velocity while composing. */
+  smearSkew: 2.2,
 } as const;
 
 /**
@@ -189,15 +277,29 @@ export const INTRO = {
    * past the real worst case (~2.4s) that a slow-but-working load never trips
    * it, and close enough that a broken one is not a blank screen for long.
    */
-  failsafe: 8,
-  /** The load gate: resolves at max(minHold, ready), never later than maxWait. */
+  failsafe: 12,
+  /**
+   * The load gate.
+   *
+   * Both of these are measured from the preloader's **first frame**, not from
+   * navigation, and that distinction is the whole fix. They used to be compared
+   * against `performance.now()` — time since navigation — while the ticker that
+   * reads them cannot start until React has hydrated. Hydration takes ~2.8s in
+   * dev, so the very first tick already exceeded a 2s ceiling: the gate resolved
+   * instantly with the bar still on 0, and the counter then sprinted 0→100% in
+   * `settle` while the panels were already parting. The counter was not slow, it
+   * never ran at all.
+   *
+   * Timed from the first frame, the bar gets the full `minHold` of visible travel
+   * no matter how long hydration took.
+   */
   load: {
-    /** Floor — the wordmark beat needs this long to read as deliberate. */
-    minHold: 0.9,
-    /** Ceiling — a stalled font can never hold the whole site hostage. */
-    maxWait: 2,
-    /** The counter running out to 100% once the gate has resolved. */
-    settle: 0.2,
+    /** Floor — how long the counter is visibly climbing before the gate may open. */
+    minHold: 2.2,
+    /** Ceiling — a stalled font or cover can never hold the site hostage. */
+    maxWait: 3.0,
+    /** The run-out to exactly 100% once the gate has resolved. */
+    settle: 0.45,
   },
   /**
    * The exit, on the preloader's own timeline.
@@ -208,11 +310,11 @@ export const INTRO = {
    */
   exit: {
     /** Wordmark, rule and counter leaving upward; the seams lighting up. */
-    mark: 0.2,
+    mark: 0.45,
     /** The panels begin to part — this is where the reveal is published. */
-    part: 0.38,
+    part: 0.72,
     /** Seconds the part takes. The longest single move in the sequence. */
-    partDuration: 1,
+    partDuration: 1.15,
   },
   /** Hero content beats, as offsets from the reveal, in the order they fire. */
   beat: {

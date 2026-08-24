@@ -27,6 +27,7 @@ export const projects: readonly Project[] = [
       height: 1650,
     },
     live: "https://dfootprint.me",
+    repo: "https://github.com/chijex5/nextjs-commerce",
   },
   {
     slug: "jobless",
@@ -44,6 +45,7 @@ export const projects: readonly Project[] = [
       width: 1600,
       height: 1100,
     },
+    repo: "https://github.com/chijex5/ai-scraper",
   },
   {
     slug: "wayframe",
@@ -62,6 +64,7 @@ export const projects: readonly Project[] = [
       height: 1650,
     },
     live: "https://wayframe.vercel.app",
+    repo: "https://github.com/chijex5/wayframe",
   },
   {
     slug: "blog",
@@ -80,6 +83,7 @@ export const projects: readonly Project[] = [
       height: 1650,
     },
     live: "https://chijioke.app",
+    repo: "https://github.com/chijex5/my-blog",
   },
   {
     slug: "picpress",
@@ -98,6 +102,7 @@ export const projects: readonly Project[] = [
       height: 1650,
     },
     live: "https://benevolent-figolla-7f76d9.netlify.app",
+    repo: "https://github.com/chijex5/picpress",
   },
   {
     slug: "precious-and-emmanuel",
@@ -116,6 +121,7 @@ export const projects: readonly Project[] = [
       height: 1650,
     },
     live: "https://emmanuel-precious.vercel.app",
+    repo: "https://github.com/chijex5/emmanuel-precious",
   },
 ];
 

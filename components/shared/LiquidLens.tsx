@@ -53,6 +53,16 @@ export default function LiquidLens() {
       let cursorX = 0;
       let cursorY = 0;
       let seen = false;
+      /** Last position actually written, so a still cursor can be detected. */
+      let sentX = -1;
+      let sentY = -1;
+      /**
+       * Consecutive frames with nothing to do. The loop used to fire six quickTo
+       * calls plus a custom-property write on every frame for the life of the page,
+       * including while the cursor sat perfectly still — each quickTo invalidating
+       * and restarting a tween for a value that had not changed.
+       */
+      let idle = 0;
 
       const handleMove = (event: PointerEvent) => {
         cursorX = event.clientX;
@@ -74,6 +84,20 @@ export default function LiquidLens() {
         if (!seen) return;
 
         const velocity = getVelocity();
+
+        // Stop entirely once the cursor has stopped and the tweens have landed.
+        // The threshold is generous — 40 frames is about 0.66s at 60fps, longer
+        // than LENS.follow (0.55s) — so nothing is ever frozen mid-ease; the loop
+        // just goes quiet afterwards instead of idling at full cost.
+        const moving =
+          cursorX !== sentX ||
+          cursorY !== sentY ||
+          velocity.pointerSpeed > 0.001;
+        idle = moving ? 0 : idle + 1;
+        if (idle > 40) return;
+
+        sentX = cursorX;
+        sentY = cursorY;
 
         xTo(cursorX);
         yTo(cursorY);

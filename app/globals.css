@@ -359,7 +359,11 @@ body {
     transparent 72%
   );
   mix-blend-mode: plus-lighter;
-  filter: blur(18px);
+  /* No `filter: blur()`. It was 18px, and a filter on an element that transforms
+     every frame has to be recomputed every frame — on top of the blend. The
+     gradient's own stops are what make this soft; the blur was refining an edge
+     that was already 30% of the way to transparent, so removing it costs a barely
+     perceptible amount of feathering and one full per-frame filter pass. */
   /* Promoted once, not per frame: this element transforms on every pointer move
      for the life of the page, so it is the one place a permanent layer is right. */
   will-change: transform, opacity;
@@ -373,8 +377,15 @@ body {
    fetch it, and it can never arrive after first paint. */
 .grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
-  mix-blend-mode: multiply;
-  opacity: 0.055;
+  /* No `mix-blend-mode`. It was `multiply`, and a full-viewport blend layer makes
+     the compositor re-blend the entire screen on every frame anything underneath
+     it moves — which, on a page with a WebGL ring and six shearing bands, is every
+     frame of every scroll. A plain overlay composites once.
+
+     Opacity is up from 0.055 to compensate: multiply darkened the noise against
+     the paper, so straight alpha needs a little more to read at the same strength.
+     Still texture you notice only by its absence. */
+  opacity: 0.07;
 }
 
 /* Bands driven by ElasticProvider. The transform itself is written from JS; this

@@ -160,6 +160,30 @@ export default async function CaseStudy({ params }: Params) {
                 </dd>
               </>
             ) : null}
+
+            {/* Source. Its own block rather than a second line under Live: not
+                every project has both, and a `repo` with no `live` (jobless, which
+                has no frontend yet) still needs a label of its own. */}
+            {project.repo ? (
+              <>
+                <dt className="text-ink-muted mt-8 font-mono text-[0.6875rem] tracking-[0.2em] uppercase">
+                  Source
+                </dt>
+                <dd className="mt-3">
+                  <a
+                    href={project.repo}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="decoration-signal hover:text-signal text-base underline underline-offset-[0.2em] transition-colors duration-300 md:text-lg"
+                  >
+                    View the code{" "}
+                    <span aria-hidden="true" className="inline-block">
+                      &#8599;
+                    </span>
+                  </a>
+                </dd>
+              </>
+            ) : null}
           </dl>
         </div>
 

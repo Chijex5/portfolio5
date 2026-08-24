@@ -59,7 +59,20 @@ export default function ElasticProvider() {
       // The showreel band mounts after hydration (WebGL + motion probe), and the
       // work rows are the most rewarding thing on the page to deform — so the set
       // of bands is not final at mount.
-      const observer = new MutationObserver(collect);
+      //
+      // Coalesced to one re-scan per frame. The callback fires for *any* mutation
+      // in the subtree, and `collect` is a document-wide querySelectorAll: without
+      // this, the preloader rewriting its percentage — a text mutation, sixty
+      // times a second — triggered a full document query each time, as did every
+      // React render anywhere on the page.
+      let queued = 0;
+      const observer = new MutationObserver(() => {
+        if (queued) return;
+        queued = requestAnimationFrame(() => {
+          queued = 0;
+          collect();
+        });
+      });
       observer.observe(document.body, { childList: true, subtree: true });
 
       // Tracks the last value written per element so a settled page stops
@@ -77,10 +90,6 @@ export default function ElasticProvider() {
           // Shear against the direction of travel: scrolling down drags the
           // bottom of the band behind the top.
           const skew = -v * ELASTIC.skew;
-          // Stretch along travel, pinch across it — the shape a falling drop
-          // takes, and the reason this reads as volume rather than as a squash.
-          const scaleY = 1 + speed * ELASTIC.stretch;
-          const scaleX = 1 - speed * ELASTIC.stretch * ELASTIC.pinch;
           // Positional lag. Small, but it's what separates the bands from each
           // other instead of every one deforming in place.
           const y = -v * ELASTIC.lag;
@@ -91,7 +100,14 @@ export default function ElasticProvider() {
                 // band has no transform at all: no stacking context, no raster
                 // layer, and no containing block over the sticky column inside.
                 ""
-              : `translate3d(0, ${y.toFixed(2)}px, 0) skewY(${skew.toFixed(3)}deg) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
+              : // translate and skew only — deliberately no `scale`. Both of
+                // these are composited: the GPU shifts a layer it has already
+                // rasterised. `scale` would instead force every glyph in a
+                // full-height band of text to be re-rasterised at the new size,
+                // every frame, across all six bands — which is what made
+                // scrolling feel laggy. See the note beside ELASTIC in
+                // lib/tokens.ts.
+                `translate3d(0, ${y.toFixed(2)}px, 0) skewY(${skew.toFixed(3)}deg)`;
 
           if (written.get(el) === transform) continue;
           written.set(el, transform);
@@ -106,6 +122,7 @@ export default function ElasticProvider() {
 
       return () => {
         observer.disconnect();
+        if (queued) cancelAnimationFrame(queued);
         gsap.ticker.remove(tick);
         for (const { el } of bands) {
           el.style.transform = "";

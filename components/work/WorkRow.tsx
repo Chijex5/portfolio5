@@ -349,6 +349,56 @@ export default function WorkRow({
                 </li>
               ))}
             </ul>
+
+            {/* Outbound links, alongside the case study rather than inside it.
+                Someone scanning the list for "can I see the code" should not have
+                to open a case study to find out.
+
+                `stopPropagation` is not needed and deliberately absent — these are
+                siblings of the title link, not nested inside it, so a click here
+                was never going to reach it. */}
+            {project.live || project.repo ? (
+              <ul className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+                {project.live ? (
+                  <li>
+                    <a
+                      href={project.live}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="group text-ink-muted hover:text-ink inline-flex items-center gap-2 font-mono text-[0.625rem] tracking-[0.2em] uppercase transition-colors duration-300"
+                    >
+                      Live
+                      <span className="sr-only"> site for {project.title}</span>
+                      <span
+                        aria-hidden="true"
+                        className="inline-block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
+                      >
+                        &#8599;
+                      </span>
+                    </a>
+                  </li>
+                ) : null}
+                {project.repo ? (
+                  <li>
+                    <a
+                      href={project.repo}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="group text-ink-muted hover:text-ink inline-flex items-center gap-2 font-mono text-[0.625rem] tracking-[0.2em] uppercase transition-colors duration-300"
+                    >
+                      Source
+                      <span className="sr-only"> code for {project.title}</span>
+                      <span
+                        aria-hidden="true"
+                        className="inline-block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
+                      >
+                        &#8599;
+                      </span>
+                    </a>
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
           </Reveal>
         </div>
       </article>

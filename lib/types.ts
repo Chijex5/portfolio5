@@ -45,6 +45,8 @@ export interface Project {
   };
   /** Live deployment, when there is one to link. */
   live?: string;
+  /** Public source. Absent means the repo is private, not that it doesn't exist. */
+  repo?: string;
   blocks?: CaseStudyBlock[];
 }
 

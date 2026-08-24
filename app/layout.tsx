@@ -34,10 +34,29 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+/**
+ * Absolute base for every relative URL in metadata — canonicals, Open Graph and
+ * Twitter images.
+ *
+ * Without it Next resolves them against http://localhost:3000 and warns at build
+ * time, which is not cosmetic: the case studies declare `openGraph.images` from
+ * `project.cover.src`, so every social preview in production would point at a host
+ * only the build machine can reach.
+ *
+ * `VERCEL_PROJECT_PRODUCTION_URL` is the production domain and is set on every
+ * Vercel deployment including previews, so a preview build advertises the
+ * production canonical rather than its own throwaway hostname — which is what you
+ * want for OG and canonical tags. Local dev falls through to localhost.
+ */
+const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  : "http://localhost:3000";
+
 const DESCRIPTION =
   "Chijioke Uzodinma is a full-stack developer in Lagos building web and mobile products with React, Next.js, TypeScript and FastAPI — from schema to interface.";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Chijioke Uzodinma — Full-stack developer",
     template: "%s — Chijioke Uzodinma",

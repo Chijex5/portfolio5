@@ -4,11 +4,14 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
 import CarouselScene from "@/components/work/CarouselScene";
 import {
@@ -22,7 +25,7 @@ import {
 } from "@/lib/gl/liquid";
 import { createTrackState } from "@/lib/gl/track";
 import { gsap } from "@/lib/gsap";
-import { CAROUSEL, VELOCITY } from "@/lib/tokens";
+import { CAROUSEL, EASE_GSAP, MOTION_OK, VELOCITY } from "@/lib/tokens";
 import type { Project } from "@/lib/types";
 import { getVelocity, writeCarousel } from "@/lib/velocity";
 
@@ -54,8 +57,20 @@ export default function LiquidCarousel({
 }: {
   projects: readonly Project[];
 }) {
+  const router = useRouter();
   const container = useRef<HTMLDivElement>(null);
   const slots = useRef<(HTMLAnchorElement | null)[]>([]);
+  const expandRef = useRef<HTMLDivElement>(null);
+  /**
+   * The plate being opened, plus the exact rect it occupied at the moment of the
+   * click. The rect has to be captured in the handler and carried here: the tick
+   * rewrites every plate's transform on the next frame, so by the time this has
+   * rendered, the element it came from has already moved on.
+   */
+  const [expanding, setExpanding] = useState<{
+    project: Project;
+    rect: { left: number; top: number; width: number; height: number };
+  } | null>(null);
   const track = useRef(createTrackState());
   const advance = useRef<((time: number) => void) | null>(null);
 
@@ -201,7 +216,13 @@ export default function LiquidCarousel({
       lastX = event.clientX;
       pendingDx = 0;
       travelled = 0;
-      element.setPointerCapture(event.pointerId);
+      // Cleared per gesture, not per click. `handleClick` also resets it, but it
+      // can only do that if a click actually arrives — and a drag frequently ends
+      // without one (the pointerdown and pointerup targets differ once capture has
+      // retargeted the release). The flag then stayed true and ate the *next*
+      // genuine click, so the first tap after any swipe did nothing.
+      suppressClick = false;
+      // Deliberately NOT capturing the pointer yet — see handlePointerMove.
       element.dataset.dragging = "true";
     };
 
@@ -211,6 +232,23 @@ export default function LiquidCarousel({
       lastX = event.clientX;
       pendingDx += dx;
       travelled += Math.abs(dx);
+
+      // Capture starts here, on the first move past the slop, rather than on
+      // pointerdown — and that ordering is what makes the plates clickable at all.
+      //
+      // A captured pointer retargets its own `pointerup` to the capturing element,
+      // and the browser then dispatches `click` to the nearest common ancestor of
+      // the pointerdown and pointerup targets. Capturing on pointerdown therefore
+      // moved every click from the plate's <a> up to this container: the anchor was
+      // never activated, so a plate click did nothing — no navigation, and no
+      // chance for the expand transition to run either.
+      //
+      // Capture is only actually needed once a drag is underway, to keep receiving
+      // moves if the finger leaves the band. Below the slop there is no drag to
+      // keep, so a plain click stays a plain click on the plate.
+      if (travelled > DRAG_SLOP && !element.hasPointerCapture(pointerId)) {
+        element.setPointerCapture(pointerId);
+      }
     };
 
     const handlePointerUp = (event: PointerEvent) => {
@@ -250,6 +288,148 @@ export default function LiquidCarousel({
       writeCarousel(0);
     };
   }, [layout]);
+
+  /**
+   * Click-to-expand (plan §6.7 / M9).
+   *
+   * A two-layer illusion, not a mesh-to-DOM morph — the plan is explicit that this
+   * is the realistic way to build it. The WebGL plate stays exactly where it is;
+   * what grows is a real `next/image` of the same cover, started at the plate's
+   * last on-screen rect and flipped out to full bleed. Because both layers show
+   * the same picture at the same size on the first frame, the handoff has nothing
+   * to give itself away with.
+   *
+   * The rect is read here rather than in the effect because the tick rewrites
+   * every plate's transform on the next frame — read a frame later and the
+   * overlay starts from wherever the plate has drifted to instead of from where
+   * the visitor actually clicked.
+   */
+  const handleExpand = useCallback(
+    (
+      event: React.MouseEvent<HTMLAnchorElement>,
+      project: Project,
+      i: number,
+    ) => {
+      // Modified clicks and middle-clicks belong to the browser: someone asking
+      // for a new tab must not get an animation and a same-tab navigation.
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      if (event.button !== 0) return;
+      // Already opening something — a second click must not restart the sequence.
+      if (expanding) {
+        event.preventDefault();
+        return;
+      }
+      // Reduced motion gets the plain navigation the Link would have done.
+      if (!window.matchMedia(MOTION_OK).matches) return;
+
+      const slot = slots.current[i];
+      if (!slot || !project.cover) return;
+
+      const rect = slot.getBoundingClientRect();
+      // A plate mid-dissolve at the edge of the band is not a sensible thing to
+      // grow from; let it navigate normally instead.
+      if (rect.width < 24 || rect.height < 24) return;
+
+      event.preventDefault();
+      setExpanding({
+        project,
+        rect: {
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        },
+      });
+    },
+    [expanding],
+  );
+
+  /**
+   * Runs the growth, then changes the route under the finished frame.
+   *
+   * `useLayoutEffect`, so the overlay is measured and flipped in the same frame it
+   * mounts — in a plain effect the browser gets a chance to paint the full-bleed
+   * image first, which is a white flash of the whole viewport before the animation
+   * has started.
+   */
+  useLayoutEffect(() => {
+    if (!expanding) return;
+    const el = expandRef.current;
+    if (!el) return;
+
+    const href = `/work/${expanding.project.slug}`;
+    const { rect } = expanding;
+
+    // Explicit geometry rather than `Flip`.
+    //
+    // Flip was the plan's suggestion and the first implementation here, but it is
+    // the wrong tool for this particular move and it failed in two ways at once.
+    // Flip's job is to animate an element between two states it *discovers* by
+    // diffing the DOM; here both rects are already known — the plate rect captured
+    // at click time, and the viewport. So the diffing bought nothing and cost the
+    // two things that actually matter:
+    //
+    //   - `Flip.fit`'s destination must be an element or a FlipState, never a plain
+    //     rect, and the only element with the plate's rect is the plate link, which
+    //     the tick has already moved on by the time this effect runs;
+    //   - a Flip timeline that finds no delta completes immediately, and a `.call()`
+    //     appended to an already-completed timeline never fires. That is what left
+    //     the overlay at full size with the route never changing.
+    //
+    // A `fromTo` on the box states both ends outright. Geometry, not `scale`, on
+    // purpose: the plate is 1.34:1 and the viewport is whatever it is, so a uniform
+    // scale would have to stretch one axis, whereas animating the box lets
+    // `object-cover` re-crop as it grows — which is what makes the picture look
+    // like it is opening rather than being pulled.
+    const grow = gsap.fromTo(
+      el,
+      {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+        right: "auto",
+        bottom: "auto",
+      },
+      {
+        left: 0,
+        top: 0,
+        // Pixels read at click time, not "100vw"/"100svh": GSAP has to interpolate
+        // these numerically, and handing it viewport units means relying on its
+        // unit conversion for `svh` in particular. The overlay is `fixed`, so the
+        // viewport *is* its containing block and these are the same value.
+        width: window.innerWidth,
+        height: window.innerHeight,
+        duration: CAROUSEL.expand,
+        ease: "expo.inOut",
+      },
+    );
+
+    // The captions go first and fast. Leaving them up would mean two copies of the
+    // same title on screen while the picture grows past them.
+    const captions = gsap.to("[data-carousel-caption]", {
+      opacity: 0,
+      duration: 0.22,
+      ease: EASE_GSAP,
+    });
+
+    // Navigation runs on its own clock rather than as a child of the animation.
+    // The two are independent on purpose: the route change is the part that must
+    // happen, and hanging it off an animation's completion means any way that
+    // animation can fail to complete is also a way the link can silently stop
+    // working. The delay is the growth plus the hold that covers the swap
+    // (see CAROUSEL.hold).
+    const navigate = gsap.delayedCall(CAROUSEL.expand + CAROUSEL.hold, () => {
+      router.push(href);
+    });
+
+    return () => {
+      grow.kill();
+      captions.kill();
+      navigate.kill();
+    };
+  }, [expanding, router]);
 
   if (slides.length === 0) return null;
 
@@ -323,6 +503,7 @@ export default function LiquidCarousel({
               ref={(node) => {
                 slots.current[i] = node;
               }}
+              onClick={(event) => handleExpand(event, project, i)}
               onPointerEnter={() => {
                 track.current.hover = i;
               }}
@@ -338,7 +519,10 @@ export default function LiquidCarousel({
                 marginTop: `-${layout.height / 2}px`,
               }}
             >
-              <span className="text-paper absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 bg-gradient-to-t from-black/55 via-black/15 to-transparent p-5 pt-16 opacity-0 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100">
+              <span
+                data-carousel-caption
+                className="text-paper absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 bg-gradient-to-t from-black/55 via-black/15 to-transparent p-5 pt-16 opacity-0 transition-opacity duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-100"
+              >
                 <span className="min-w-0">
                   <span className="block font-mono text-[0.625rem] tracking-[0.2em] uppercase opacity-70">
                     {project.index} &mdash; {project.category}
@@ -355,6 +539,34 @@ export default function LiquidCarousel({
           );
         })}
       </div>
+
+      {/* The expanding frame.
+          `fixed inset-0` and CSS full-bleed from the first render — Flip.fit puts
+          it on the plate, and the effect flips it back out to this. z-[65] clears
+          the header (40), the lens (30) and the grain (50), but stays under the
+          preloader (70), which owns the screen outright when it is up.
+
+          aria-hidden and pointer-events-none: it is a transition, and the route it
+          is opening is what will announce itself. */}
+      {expanding?.project.cover ? (
+        <div
+          ref={expandRef}
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-[65] overflow-hidden will-change-transform"
+        >
+          <Image
+            src={expanding.project.cover.src}
+            alt=""
+            fill
+            // Full-viewport from the moment it mounts, and already in cache: this
+            // is the same `src` the plate's texture came from and the same one the
+            // case study is about to render, so nothing is fetched for the
+            // animation itself.
+            sizes="100vw"
+            className="object-cover"
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

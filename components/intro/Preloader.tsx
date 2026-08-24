@@ -211,12 +211,27 @@ export default function Preloader() {
         /** Where the bar was at that moment, so the run-out starts from it. */
         let resolvedFrom = 0;
 
+        /**
+         * Time of the first frame this ran, in seconds. Everything is measured
+         * from here rather than from navigation.
+         *
+         * This is the fix for a counter that never moved. `performance.now()` is
+         * time since navigation, but this ticker cannot start until React has
+         * hydrated — ~2.8s in dev. Comparing navigation-relative time against a
+         * 2s ceiling meant the *first* tick was already past it: the gate resolved
+         * with `shown` still 0 and the bar then had only `settle` to cover the
+         * whole range, so what a visitor saw was 0% followed immediately by the
+         * panels opening.
+         *
+         * Measured from the first frame, the bar always gets its full `minHold` of
+         * visible travel, however long hydration took to arrive.
+         */
+        let startedAt = -1;
+
         function tick(_time: number, deltaTime: number) {
-          // Elapsed is measured from *navigation*, not from mount. The 2s
-          // ceiling is a promise to the visitor about how long they can be kept
-          // waiting, and hydration is part of that wait — starting the clock at
-          // mount would let a slow load spend its budget twice.
-          const elapsed = performance.now() / 1000;
+          const now = performance.now() / 1000;
+          if (startedAt < 0) startedAt = now;
+          const elapsed = now - startedAt;
 
           if (resolvedAt < 0) {
             if (elapsed >= INTRO.load.minHold && ready >= 1) resolve(elapsed);
@@ -224,12 +239,23 @@ export default function Preloader() {
           }
 
           if (resolvedAt < 0) {
-            // The elapsed-time floor. A bar that stops moving reads as a crash
-            // even when the load genuinely has stalled, so time itself always
-            // contributes something.
+            // Three terms, and each one is doing a distinct job:
+            //
+            //   pace  — a steady climb spread across the whole hold. This is the
+            //           cap, and it is what makes the number readable: without it
+            //           a warm cache sets `ready` to 1 on the first frame, the bar
+            //           snaps to the 97% ceiling, and then sits there for the rest
+            //           of the hold. A bar parked at 97% reads as a hang, which is
+            //           the very thing the ceiling exists to avoid.
+            //   ready — the honest signal. The bar can never claim more progress
+            //           than has actually landed.
+            //   floor — a slow time-based minimum, so a genuinely stalled load
+            //           still creeps rather than freezing and looking crashed.
+            const pace = elapsed / INTRO.load.minHold;
+            const floor = elapsed / INTRO.load.maxWait;
             const target = Math.min(
               CEILING,
-              Math.max(ready, elapsed / INTRO.load.maxWait),
+              Math.min(pace, Math.max(ready, floor)),
             );
             if (target > shown) {
               // Delta-scaled so the approach looks the same at 60 and 144Hz.

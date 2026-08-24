@@ -44,7 +44,7 @@ export default function SmoothScrollProvider({
     <ReactLenis
       root
       ref={lenisRef}
-      options={{ autoRaf: false, lerp: LENIS.lerp, duration: LENIS.duration }}
+      options={{ autoRaf: false, lerp: LENIS.lerp }}
     >
       {children}
       <ScrollTriggerBridge />
