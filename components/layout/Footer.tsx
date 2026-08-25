@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BackToTop from "@/components/shared/BackToTop";
 import MagneticButton from "@/components/shared/MagneticButton";
+import Reveal from "@/components/shared/Reveal";
 import SmoothLink from "@/components/shared/SmoothLink";
 import SplitReveal from "@/components/shared/SplitReveal";
 import { CONTACT, NAV_LINKS, SOCIAL_LINKS } from "@/lib/nav";
@@ -31,22 +32,43 @@ export default function Footer() {
         <div className="md:col-span-7">
           <div className="flex items-baseline justify-between gap-4">
             <h2 className="text-ink-muted font-mono text-xs tracking-[0.2em] uppercase">
-              03 &mdash; Contact
+              05 &mdash; Contact
             </h2>
             <p className="text-ink/30 font-mono text-xs tracking-[0.2em] lowercase md:hidden">
               (let&rsquo;s talk)
             </p>
           </div>
 
+          <Reveal>
+            <p className="text-ink-muted mt-8 max-w-md text-base leading-relaxed text-pretty md:text-lg">
+              Most of my best projects started with a sentence like:
+            </p>
+          </Reveal>
+
+          {/* The two openers are the headline. They are the memorable part of the
+              section, and quoting them at display size says more about how I like
+              to work than a rhetorical question would. */}
           <SplitReveal
             as="p"
-            className="font-display mt-8 text-[clamp(2.25rem,6.5vw,5rem)] leading-[1.0] tracking-[-0.02em]"
+            className="font-display mt-6 text-[clamp(1.75rem,4.6vw,3.5rem)] leading-[1.06] tracking-[-0.02em]"
           >
-            <span className="block">Got something </span>
+            <span className="block">&ldquo;Quick question&hellip;&rdquo;</span>
+            <span className="text-ink-muted block text-[0.5em]">or</span>
             <span className="block">
-              worth <em className="text-signal not-italic">building?</em>
+              &ldquo;This might be a{" "}
+              <em className="text-signal not-italic">stupid idea</em>,
+              but&hellip;&rdquo;
             </span>
           </SplitReveal>
+
+          <Reveal delay={0.1}>
+            <p className="text-ink-muted mt-8 max-w-lg text-base leading-relaxed text-pretty md:text-lg">
+              Turns out those are usually the fun ones. If you&rsquo;re building
+              something interesting, stuck on something annoying, or just want
+              to talk through an idea before it becomes a real project, send me
+              a message.
+            </p>
+          </Reveal>
 
           <MagneticButton className="mt-10">
             <a
@@ -63,8 +85,14 @@ export default function Footer() {
             </a>
           </MagneticButton>
 
+          <Reveal delay={0.06}>
+            <p className="text-ink-muted mt-8 text-base text-pretty md:text-lg">
+              Let&rsquo;s see where the conversation goes.
+            </p>
+          </Reveal>
+
           {CONTACT.available ? (
-            <p className="text-ink-muted mt-8 flex items-center gap-2 font-mono text-xs tracking-[0.16em] uppercase">
+            <p className="text-ink-muted mt-6 flex items-center gap-2 font-mono text-xs tracking-[0.16em] uppercase">
               <span
                 className="status-dot bg-signal size-1.5 rounded-full"
                 aria-hidden="true"

@@ -46,25 +46,32 @@ export default function About() {
             }}
             className="font-display text-[clamp(1.625rem,3.4vw,2.75rem)] leading-[1.12] tracking-[-0.01em]"
           >
-            I like owning the whole picture — schema, API, and the interface on
-            top.
+            I like understanding the entire system.
           </SplitReveal>
+
+          {/* The qualifier, set as three beats rather than a sentence — the way it
+              is written is the point. */}
+          <Reveal delay={0.08}>
+            <p className="text-ink-muted mt-6 max-w-lg text-lg leading-relaxed text-pretty md:text-xl">
+              Not just the interface. Not just the API. The whole thing.
+            </p>
+          </Reveal>
 
           <div className="mt-12 grid gap-8 md:grid-cols-2 md:gap-10">
             <Reveal>
               <p className="text-ink-muted text-base leading-relaxed text-pretty md:text-lg">
-                My work usually starts as a problem I actually have — a messy
-                job hunt, a wedding site with a deadline, screens I forgot to
-                design. I build the thing, then sand the edges until it&rsquo;s
-                something I&rsquo;d hand a friend without a disclaimer.
+                Most of my projects begin with a problem I&rsquo;ve personally
+                run into. A frustrating job search. A missing workflow. A
+                process that feels more complicated than it should be.
               </p>
             </Reveal>
             <Reveal delay={0.12}>
               <p className="text-ink-muted text-base leading-relaxed text-pretty md:text-lg">
-                On the front I reach for React, Next.js, React Native and
-                TypeScript; behind it, Python and FastAPI over PostgreSQL and
-                MongoDB. I care about performance, honest copy, and interfaces
-                that get out of the way.
+                I build a version that solves the problem, use it myself, then
+                keep refining it until it feels finished. On the frontend I
+                mostly reach for React, Next.js, React Native and TypeScript; on
+                the backend it&rsquo;s usually Python, FastAPI, PostgreSQL and
+                MongoDB.
               </p>
             </Reveal>
           </div>
@@ -82,6 +89,13 @@ export default function About() {
                 </div>
               ))}
             </dl>
+          </Reveal>
+
+          <Reveal delay={0.14}>
+            <p className="text-ink-muted mt-10 max-w-xl text-base leading-relaxed text-pretty md:text-lg">
+              The statistics side probably explains why I enjoy building systems
+              that collect data almost as much as the systems themselves.
+            </p>
           </Reveal>
         </div>
       </div>

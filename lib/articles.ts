@@ -2,8 +2,11 @@ import type { Article } from "@/lib/types";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- * PLACEHOLDER CONTENT — REPLACE ME
+ * Entry 01 is real. Entries 02–05 are PLACEHOLDERS — REPLACE THEM.
  * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * "Shipped." is written; the four below it are stand-ins kept so the section has
+ * a list to be a list. Their titles and dates are invented.
  *
  * Five stand-in posts. They exist so the Writing section has believable rhythm
  * to animate against: a long title next to a short one, a mix of topics, dates
@@ -24,14 +27,19 @@ import type { Article } from "@/lib/types";
  */
 export const articles: readonly Article[] = [
   {
-    slug: "shipping-of-a-solo-developer",
+    slug: "shipped",
     index: "01",
-    title: "What shipping alone actually teaches you",
-    standfirst:
-      "Owning the schema, the API and the interface at once changes which decisions turn out to be expensive — and it is rarely the ones you budgeted for.",
+    title: "Shipped.",
+    standfirst: "My favourite projects are the ones that leave my laptop.",
+    excerpt: [
+      "The storefront collecting payments.",
+      "The wedding website handling RSVPs.",
+      "The tool saving somebody fifty minutes of repetitive work.",
+      "Shipping changes how you think about software. Users don't care how elegant the architecture is if the email never arrives.",
+    ],
     topic: "Engineering",
     date: "2026-07-18",
-    minutes: 9,
+    minutes: 6,
     href: "https://chijioke.app",
   },
   {

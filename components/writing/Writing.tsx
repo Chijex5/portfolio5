@@ -41,7 +41,7 @@ import { DURATION, EASE_GSAP, HOVER_OK, MOTION_OK, REVEAL } from "@/lib/tokens";
  *   - rows stagger in on entry, index first, which reads as a list being set
  *     rather than a block appearing.
  *
- * Content is placeholder — see lib/articles.ts.
+ * Entry 01 is written; 02–05 are still placeholders — see lib/articles.ts.
  */
 export default function Writing() {
   const root = useRef<HTMLElement>(null);
@@ -220,12 +220,30 @@ export default function Writing() {
             </a>
 
             <Reveal delay={0.1}>
-              <p className="text-ink-muted mt-6 max-w-xl text-base leading-relaxed text-pretty md:text-lg">
+              <p className="text-ink mt-6 max-w-xl text-lg leading-relaxed text-pretty md:text-xl">
                 {featuredArticle.standfirst}
               </p>
             </Reveal>
 
-            <Reveal delay={0.16}>
+            {/* The lines from the piece itself. Stacked, because they are written
+                as separate beats rather than as a paragraph — see Article.excerpt.
+                Guarded, so the four placeholder rows below are unaffected. */}
+            {featuredArticle.excerpt ? (
+              <Reveal delay={0.14}>
+                <div className="mt-6 max-w-xl space-y-2">
+                  {featuredArticle.excerpt.map((line) => (
+                    <p
+                      key={line}
+                      className="text-ink-muted text-base leading-relaxed text-pretty md:text-lg"
+                    >
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              </Reveal>
+            ) : null}
+
+            <Reveal delay={0.2}>
               <a
                 href={featuredArticle.href}
                 target="_blank"

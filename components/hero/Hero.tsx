@@ -38,8 +38,8 @@ const STATS = [
 /**
  * Hero: kinetic type over parallax depth planes (plan §6, M3).
  *
- * The headline is three block spans rather than one wrapped string, so the line
- * breaks are the ones the copy was written for — and SplitText, which measures
+ * The headline is two block spans rather than one wrapped string, so the line
+ * break is the one the copy was written for — and SplitText, which measures
  * rendered lines, masks exactly those. (A `<br>` would work too, but it leaves the
  * words unspaced in `textContent`, which is what the aria-label is built from.)
  *
@@ -252,7 +252,7 @@ export default function Hero() {
       ref={root}
       id="index"
       data-hero-intro
-      className="relative flex min-h-svh flex-col overflow-hidden px-6 pt-28 pb-10 md:px-10 md:pt-32"
+      className="relative flex min-h-svh flex-col overflow-hidden px-6 pt-24 pb-10 md:px-10 md:pt-32"
     >
       {/* Depth planes — decorative, so hidden from the a11y tree entirely. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -373,34 +373,49 @@ export default function Hero() {
           // section is composed of is actually on the first screen.
           className="font-display text-[clamp(2.25rem,8.6vw,7.5rem)] leading-[0.96] tracking-[-0.02em]"
         >
-          <span className="block">I build web </span>
-          <span className="block">products people </span>
+          <span className="block">I build things because </span>
           <span className="block">
-            actually <em className="text-signal not-italic">use.</em>
+            something <em className="text-signal not-italic">annoyed me.</em>
           </span>
         </SplitReveal>
 
-        {/* Copy left, ribbon right — but stacked below `lg`, not dropped. The
-            ribbon used to be `hidden lg:flex`, which left a phone with ~180px of
-            blank paper between the paragraph and the CTA: the emptiest part of the
-            emptiest screen. Stacked, the three covers fill exactly that gap and
-            the first screen shows actual work instead of a void. */}
+        {/* Copy left, ribbon right — and the ribbon is desktop-only again.
+            It was stacked below `lg` to fill roughly 180px of blank paper that sat
+            between a one-paragraph pitch and the CTA. The pitch is now two
+            paragraphs and four sentences longer, so that gap is gone: keeping the
+            ribbon on a phone pushed the stats 112px *below* the fold, which is the
+            same failure it was introduced to solve, inverted. The covers are one
+            scroll away in the work list either way. */}
         <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
-          <p
-            data-intro="copy"
-            className="text-ink-muted max-w-xl text-lg leading-relaxed text-pretty md:text-xl"
-          >
-            I&rsquo;m {CONTACT.shortName} — a {CONTACT.role.toLowerCase()} who
-            designs the data model, builds the API, and sweats the interface.
-            Below are products I took from idea to shipped.
-          </p>
+          {/* Two paragraphs, both on the same intro beat, so they arrive as one
+              block of copy rather than as a second thing happening. */}
+          <div className="max-w-xl space-y-5">
+            <p
+              data-intro="copy"
+              className="text-ink-muted text-lg leading-relaxed text-pretty md:text-xl"
+            >
+              Most of my projects started the same way: I ran into a problem,
+              couldn&rsquo;t find a solution I liked, and built one instead.
+              Sometimes it&rsquo;s a job search tool. Sometimes it&rsquo;s a
+              wedding website. Sometimes it&rsquo;s realizing halfway through a
+              project that I forgot an entire onboarding screen.
+            </p>
+            <p
+              data-intro="copy"
+              className="text-ink-muted text-base leading-relaxed text-pretty md:text-lg"
+            >
+              I&rsquo;m {CONTACT.shortName}. I work across the stack, from
+              database design to frontend polish, and I genuinely enjoy figuring
+              out how all the pieces fit together.
+            </p>
+          </div>
 
           {/* The work, glimpsed. Decorative twin of the list below — same covers,
               and the list is the accessible path — so it stays out of the a11y
               tree entirely and the images carry no alt text. */}
           <div
             aria-hidden="true"
-            className="flex items-end gap-3 lg:shrink-0 lg:gap-4"
+            className="hidden items-end gap-3 lg:flex lg:shrink-0 lg:gap-4"
           >
             {RIBBON.map(({ project, depth, drop }) => (
               <figure

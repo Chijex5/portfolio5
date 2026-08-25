@@ -54,23 +54,23 @@ export type CapabilityGroup = {
 export const CAPABILITIES: readonly CapabilityGroup[] = [
   {
     label: "Interface",
-    note: "The part people actually touch — built to survive real use, not just a demo.",
+    note: "The part people see and complain about when it breaks.",
     items: ["React", "Next.js", "React Native", "TypeScript", "Tailwind"],
   },
   {
     label: "Motion",
-    note: "Animation as structure rather than decoration: scroll, type and WebGL on one clock.",
-    items: ["GSAP", "WebGL / GLSL", "Three.js", "Lenis"],
+    note: "Just enough movement to make things feel alive. Not enough to make people dizzy.",
+    items: ["GSAP", "Three.js", "WebGL / GLSL", "Lenis"],
   },
   {
     label: "Services",
-    note: "The API and the jobs behind it, including the unglamorous scraping and scoring.",
-    items: ["Python", "FastAPI", "Node", "REST"],
+    note: "The backend, the automation, the scheduled jobs, and all the boring bits that make the product actually work.",
+    items: ["Python", "FastAPI", "Node.js", "REST APIs"],
   },
   {
     label: "Data",
-    note: "Schema first. The model decides how much the next six months cost.",
-    items: ["PostgreSQL", "MongoDB", "Prisma"],
+    note: "I spend an unhealthy amount of time thinking about schemas before writing features.",
+    items: ["PostgreSQL", "MongoDB", "Drizzle ORM", "Prisma"],
   },
 ];
 

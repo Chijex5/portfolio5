@@ -7,6 +7,13 @@
 
 export type CaseStudyBlock =
   | { kind: "text"; heading?: string; body: string }
+  /**
+   * A line that carries the whole point of a case study and should not be read as
+   * another paragraph — "Which jobs are actually worth my time?", "Just a smaller
+   * PDF." Its own kind rather than a `text` block with a flag, so the renderer
+   * cannot accidentally give it a heading and so the intent is legible in the data.
+   */
+  | { kind: "quote"; body: string }
   | { kind: "image"; src: string; alt: string; wide?: boolean };
 
 export interface Project {
@@ -73,4 +80,14 @@ export interface Article {
   minutes: number;
   /** Where it lives. External for now, since the blog is its own deployment. */
   href: string;
+  /**
+   * A few short lines from the piece itself, shown under the standfirst on the
+   * *featured* entry only — the compact rows have no room for it.
+   *
+   * An array rather than a paragraph because these are written as separate beats
+   * ("The storefront collecting payments. / The wedding website handling RSVPs.")
+   * and setting them stacked is the point; joining them into prose would flatten
+   * the rhythm they were written with.
+   */
+  excerpt?: readonly string[];
 }

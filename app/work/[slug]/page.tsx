@@ -47,7 +47,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-/** Long-form body. Absent until the case studies are written (see §5). */
+/** Long-form body: paragraphs, the line a study turns on, and figures. */
 function Block({ block }: { block: CaseStudyBlock }) {
   if (block.kind === "image") {
     return (
@@ -62,6 +62,28 @@ function Block({ block }: { block: CaseStudyBlock }) {
           />
         </figure>
       </Reveal>
+    );
+  }
+
+  // The line the case study turns on — "Just a smaller PDF.", "Which jobs are
+  // actually worth my time?" Set as display type against a signal hairline, and
+  // wider than the body column, so it reads as the conclusion rather than as one
+  // more paragraph that happens to be short.
+  if (block.kind === "quote") {
+    return (
+      <div className="mt-16 max-w-3xl">
+        <span
+          aria-hidden="true"
+          className="bg-signal mb-7 block h-px w-12 origin-left"
+        />
+        <SplitReveal
+          as="p"
+          stagger={0.07}
+          className="font-display text-[clamp(1.5rem,3.4vw,2.5rem)] leading-[1.14] tracking-[-0.015em]"
+        >
+          {block.body}
+        </SplitReveal>
+      </div>
     );
   }
 
@@ -127,7 +149,7 @@ export default async function CaseStudy({ params }: Params) {
 
           <dl className="md:col-span-4 md:col-start-9">
             <dt className="text-ink-muted font-mono text-[0.6875rem] tracking-[0.2em] uppercase">
-              Built with
+              Tech
             </dt>
             <dd className="mt-4 flex flex-wrap gap-2">
               {project.tags.map((tag) => (
@@ -139,52 +161,57 @@ export default async function CaseStudy({ params }: Params) {
                 </span>
               ))}
             </dd>
+          </dl>
 
-            {project.live ? (
-              <>
-                <dt className="text-ink-muted mt-8 font-mono text-[0.6875rem] tracking-[0.2em] uppercase">
-                  Live
-                </dt>
-                <dd className="mt-3">
+          {/* Outbound links, outside the <dl>.
+              They were dt/dd pairs, which read as "Live: Live ↗" once the link
+              text was aligned to the deck — a label and a value saying the same
+              word. They are not term/definition pairs anyway: each is a single
+              destination, so a plain list is both honest markup and what the deck
+              shows. `sr-only` carries the project name, since "Live ↗" on its own
+              tells a screen-reader user nothing about where it goes. */}
+          {project.live || project.repo ? (
+            <ul className="flex flex-wrap items-center gap-x-8 gap-y-3 md:col-span-4 md:col-start-9 md:-mt-2">
+              {project.live ? (
+                <li>
                   <a
                     href={project.live}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="decoration-signal hover:text-signal text-base underline underline-offset-[0.2em] transition-colors duration-300 md:text-lg"
+                    className="group text-ink hover:text-signal inline-flex items-center gap-2 font-mono text-xs tracking-[0.2em] uppercase transition-colors duration-300"
                   >
-                    Visit the site{" "}
-                    <span aria-hidden="true" className="inline-block">
+                    Live
+                    <span className="sr-only"> site for {project.title}</span>
+                    <span
+                      aria-hidden="true"
+                      className="inline-block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
+                    >
                       &#8599;
                     </span>
                   </a>
-                </dd>
-              </>
-            ) : null}
-
-            {/* Source. Its own block rather than a second line under Live: not
-                every project has both, and a `repo` with no `live` (jobless, which
-                has no frontend yet) still needs a label of its own. */}
-            {project.repo ? (
-              <>
-                <dt className="text-ink-muted mt-8 font-mono text-[0.6875rem] tracking-[0.2em] uppercase">
-                  Source
-                </dt>
-                <dd className="mt-3">
+                </li>
+              ) : null}
+              {project.repo ? (
+                <li>
                   <a
                     href={project.repo}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="decoration-signal hover:text-signal text-base underline underline-offset-[0.2em] transition-colors duration-300 md:text-lg"
+                    className="group text-ink hover:text-signal inline-flex items-center gap-2 font-mono text-xs tracking-[0.2em] uppercase transition-colors duration-300"
                   >
-                    View the code{" "}
-                    <span aria-hidden="true" className="inline-block">
+                    Source
+                    <span className="sr-only"> code for {project.title}</span>
+                    <span
+                      aria-hidden="true"
+                      className="inline-block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-0.5"
+                    >
                       &#8599;
                     </span>
                   </a>
-                </dd>
-              </>
-            ) : null}
-          </dl>
+                </li>
+              ) : null}
+            </ul>
+          ) : null}
         </div>
 
         {/* Cover. `loading="eager"` rather than `preload`: the headline above is

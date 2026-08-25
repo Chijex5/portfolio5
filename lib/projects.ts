@@ -17,7 +17,7 @@ export const projects: readonly Project[] = [
     category: "E-commerce",
     year: 2026,
     blurb:
-      "A storefront for my sister's handmade-footwear brand. Customers browse the catalogue, order made-to-measure pairs, and follow each one from the workshop bench to their doorstep.",
+      "Built for my sister's footwear brand after I got tired of seeing small businesses settle for storefronts they couldn't really control.",
     tags: ["Next.js", "Tailwind", "Paystack", "PostgreSQL"],
     cover: {
       src: "/images/work/dfootprint.webp",
@@ -28,6 +28,16 @@ export const projects: readonly Project[] = [
     },
     live: "https://dfootprint.me",
     repo: "https://github.com/chijex5/nextjs-commerce",
+    blocks: [
+      {
+        kind: "text",
+        body: "I started with the Next.js Commerce template, then replaced the Shopify backend entirely with my own PostgreSQL setup, custom schema, migrations, and payment flow. Customers can browse products, place real orders through Paystack, and track them from production to delivery.",
+      },
+      {
+        kind: "text",
+        body: "One of my longest-running projects so far, with hundreds of commits and way more iterations than I originally planned.",
+      },
+    ],
   },
   {
     slug: "jobless",
@@ -36,8 +46,8 @@ export const projects: readonly Project[] = [
     category: "Tooling",
     year: 2026,
     blurb:
-      "Scrapes listings across the web, scores each role against your skills and taste, then tracks every application from saved to signed.",
-    tags: ["Python", "AI validation", "Scraper", "MongoDB"],
+      "Job hunting is already frustrating. Looking across five different job boards every day makes it worse.",
+    tags: ["Python", "AI Validation", "Web Scraping", "MongoDB"],
     cover: {
       src: "/images/work/jobless.webp",
       plate: "/images/work/jobless-plate.webp",
@@ -46,6 +56,20 @@ export const projects: readonly Project[] = [
       height: 1100,
     },
     repo: "https://github.com/chijex5/ai-scraper",
+    blocks: [
+      {
+        kind: "text",
+        body: "Jobless pulls listings from multiple sources, validates them with AI, and ranks them using a weighted scoring system so the best opportunities don't get buried under noise.",
+      },
+      {
+        kind: "text",
+        body: "Instead of showing every listing equally, it tries to answer a simple question:",
+      },
+      {
+        kind: "quote",
+        body: "Which jobs are actually worth my time?",
+      },
+    ],
   },
   {
     slug: "wayframe",
@@ -53,9 +77,8 @@ export const projects: readonly Project[] = [
     title: "Wayframe",
     category: "AI tooling",
     year: 2026,
-    blurb:
-      "Turns a plain-language description of a screen flow into an editable diagram, checks it against a library of real app patterns, and flags the screens you forgot to design.",
-    tags: ["Next.js", "TypeScript", "LLM", "React Flow"],
+    blurb: "This exists because I kept forgetting screens.",
+    tags: ["Next.js", "TypeScript", "LLMs", "React Flow"],
     cover: {
       src: "/images/work/wayframe.webp",
       plate: "/images/work/wayframe-plate.webp",
@@ -65,6 +88,20 @@ export const projects: readonly Project[] = [
     },
     live: "https://wayframe.vercel.app",
     repo: "https://github.com/chijex5/wayframe",
+    blocks: [
+      {
+        kind: "text",
+        body: "I'd start building an app, get halfway through, and suddenly realize I never designed something important like password recovery, onboarding, or address collection.",
+      },
+      {
+        kind: "text",
+        body: "Wayframe lets me describe an application in plain English and turns it into an editable flow diagram. It also compares the flow against patterns from similar products and points out screens I probably missed.",
+      },
+      {
+        kind: "quote",
+        body: "The best feature isn't the generation. It's catching mistakes before they become rewrites.",
+      },
+    ],
   },
   {
     slug: "blog",
@@ -73,7 +110,7 @@ export const projects: readonly Project[] = [
     category: "Publishing",
     year: 2026,
     blurb:
-      "A personal publishing platform end to end — admin dashboard, rich-text editor, and an email pipeline — built around one writer instead of an editorial team.",
+      "Most blogging platforms are built for teams. I wanted one built for me.",
     tags: ["Next.js", "PostgreSQL", "TipTap", "Resend"],
     cover: {
       src: "/images/work/blog.webp",
@@ -84,6 +121,16 @@ export const projects: readonly Project[] = [
     },
     live: "https://chijioke.app",
     repo: "https://github.com/chijex5/my-blog",
+    blocks: [
+      {
+        kind: "text",
+        body: "This is a custom publishing platform with its own admin dashboard, rich-text editor, database, and email pipeline. Everything is designed around my writing process rather than trying to be a general-purpose CMS.",
+      },
+      {
+        kind: "quote",
+        body: "I use it because it fits how I work.",
+      },
+    ],
   },
   {
     slug: "picpress",
@@ -92,8 +139,8 @@ export const projects: readonly Project[] = [
     category: "Utility",
     year: 2026,
     blurb:
-      "Compresses phone photos on the spot and stitches them into a lightweight PDF. No account, no upload wall, just a file you can send.",
-    tags: ["React", "Next.js", "Client-side", "PDF"],
+      "A friend sends twenty iPhone photos. You turn them into a PDF. The PDF is somehow 300MB. That's the entire reason this project exists.",
+    tags: ["React", "Next.js", "Client-side Processing", "PDF Generation"],
     cover: {
       src: "/images/work/picpress.webp",
       plate: "/images/work/picpress-plate.webp",
@@ -103,16 +150,30 @@ export const projects: readonly Project[] = [
     },
     live: "https://benevolent-figolla-7f76d9.netlify.app",
     repo: "https://github.com/chijex5/picpress",
+    blocks: [
+      {
+        kind: "text",
+        body: "PicPress compresses images directly in the browser, lets users arrange them into pages, and exports a PDF without uploading anything to a server.",
+      },
+      {
+        kind: "text",
+        body: "No account. No setup. No unnecessary steps.",
+      },
+      {
+        kind: "quote",
+        body: "Just a smaller PDF.",
+      },
+    ],
   },
   {
     slug: "precious-and-emmanuel",
     index: "06",
     title: "Precious & Emmanuel",
-    category: "Client site",
+    category: "Client project",
     year: 2026,
     blurb:
-      "A wedding site with a real deadline — RSVP tracking, guest details, and a countdown — built for two people who aren't developers.",
-    tags: ["Next.js", "Backend", "RSVP system"],
+      "A wedding website comes with something most side projects don't: an immovable deadline.",
+    tags: ["Next.js", "PostgreSQL", "RSVP System", "Ticket Generation"],
     cover: {
       src: "/images/work/precious-and-emmanuel.webp",
       plate: "/images/work/precious-and-emmanuel-plate.webp",
@@ -122,6 +183,20 @@ export const projects: readonly Project[] = [
     },
     live: "https://emmanuel-precious.vercel.app",
     repo: "https://github.com/chijex5/emmanuel-precious",
+    blocks: [
+      {
+        kind: "text",
+        body: "This redesign includes guest management, RSVP tracking, digital invitations, and ticket-style confirmations. The goal was simple: make it easy for guests to respond, keep everything organized, and give the experience a little more personality than a typical event page.",
+      },
+      {
+        kind: "text",
+        body: "It needed to work for real guests, real families, and a real date on the calendar.",
+      },
+      {
+        kind: "quote",
+        body: "Those are always the most interesting projects.",
+      },
+    ],
   },
 ];
 
