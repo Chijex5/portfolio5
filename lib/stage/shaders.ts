@@ -64,8 +64,6 @@ uniform float uTurb;
 uniform float uDpr;
 uniform float uCamZ;
 uniform float uMotion;   // 0 under reduced motion: no drift, swirl or cursor
-uniform float uSweep;    // 1 when picture → picture: the morph runs as a wave across
-uniform float uViewW;
 uniform vec2 uMouse;     // stage px
 uniform float uMouseR;   // radius of the push, px
 uniform float uMouseF;   // 0–1, rises while the pointer moves
@@ -128,13 +126,8 @@ void main(){
 
   // Staggered ease: each particle starts its trip at its own moment, so a morph
   // reads as a flock turning rather than a crossfade.
-  // Between two pictures the order is left to right instead of random, so one
-  // picture is re-woven into the next as a wave rather than dissolved.
-  float across = clamp((b.x + uCenterB.x) / uViewW + 0.5, 0.0, 1.0);
-  float order = mix(aRand.x, across * 0.94 + aRand.x * 0.06, uSweep);
-  // A narrow band (S = 4 → a quarter of the width) reads as a wave front.
-  float S = mix(0.65, 4.0, uSweep);
-  float e = clamp(uMix * (1.0 + S) - order * S, 0.0, 1.0);
+  float S = 0.65;
+  float e = clamp(uMix * (1.0 + S) - aRand.x * S, 0.0, 1.0);
   e = e * e * (3.0 - 2.0 * e);
   if (uMotion < 0.5) e = step(0.5, uMix);
 
@@ -145,10 +138,7 @@ void main(){
   // En route, particles swirl — the arc is what makes a morph feel physical.
   float arc = sin(e * 3.14159) * uMotion;
   if (arc > 0.001) {
-    float amp = mix(90.0 + 160.0 * aRand.y, 14.0, uSweep);
-    p += snoise3(p * 0.003 + aRand.yzw * 4.0 + uTime * 0.05) * arc * amp;
-    // The wave lifts toward the viewer as it passes.
-    p.z += arc * (120.0 + 80.0 * aRand.y) * uSweep;
+    p += snoise3(p * 0.003 + aRand.yzw * 4.0 + uTime * 0.05) * arc * (90.0 + 160.0 * aRand.y);
   }
 
   // Scroll speed stirs everything up a little.

@@ -1,4 +1,4 @@
-import { anchorBox, isMobile, projectRect, toStage, type Rect } from "./layout";
+import { anchorBox, isMobile } from "./layout";
 
 /**
  * The shapes the particles move between — one per beat of the story.
@@ -590,125 +590,24 @@ export function surface(n: number, w: number, h: number): ShapeData {
 }
 
 /**
- * Pixels of a project picture, sampled once at load into a small grid so that
- * re-laying it out on resize, or onto a case-study cover, needs no new decode.
+ * Chapter 5 — proof. The projects act themselves out in the DOM, so the stage
+ * steps back: a sparse, dim field that keeps drifting behind the scenes.
  */
-export type Picture = { cols: number; rows: number; rgba: Uint8ClampedArray };
-
-export function pictureGrid(n: number, aspect: number) {
-  const cols = Math.floor(Math.sqrt(n * aspect));
-  const rows = Math.floor(n / cols);
-  return { cols, rows };
-}
-
-export function samplePicture(
-  img: CanvasImageSource,
-  cols: number,
-  rows: number,
-): Picture {
-  const c = document.createElement("canvas");
-  c.width = cols;
-  c.height = rows;
-  const ctx = c.getContext("2d", { willReadFrequently: true })!;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, 0, 0, cols, rows);
-  const rgba = ctx.getImageData(0, 0, cols, rows).data;
-  knockout(rgba, cols, rows);
-  return { cols, rows, rgba };
-}
-
-const lum = (r: number, g: number, b: number) =>
-  (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-
-/**
- * Light screenshots on a dark stage.
- *
- * Drawn as-is, a white web page becomes a slab of bright dots with its content
- * as slightly darker static — the content is exactly what disappears. So when a
- * picture sits on a flat, light background (its border is bright and uniform:
- * a UI screenshot, not a photograph), knock the background out: it drops to a
- * faint haze, neutral content (text, rules) turns to bone, and colour (buttons,
- * photos, the accent) keeps its hue. The page reads as itself, in dark mode.
- */
-function knockout(rgba: Uint8ClampedArray, cols: number, rows: number) {
-  const border: number[] = [];
-  const at = (x: number, y: number) => (y * cols + x) * 4;
-  for (let x = 0; x < cols; x++) border.push(at(x, 0), at(x, rows - 1));
-  for (let y = 0; y < rows; y++) border.push(at(0, y), at(cols - 1, y));
-  const ls = border.map((k) => lum(rgba[k], rgba[k + 1], rgba[k + 2]));
-  const mean = ls.reduce((a, b) => a + b, 0) / ls.length;
-  const sd = Math.sqrt(ls.reduce((a, b) => a + (b - mean) ** 2, 0) / ls.length);
-  if (mean < 0.8 || sd > 0.06) return;
-
-  const bg = [0, 1, 2].map((ch) => {
-    const v = border.map((k) => rgba[k + ch]).sort((a, b) => a - b);
-    return v[v.length >> 1];
-  });
-  for (let k = 0; k < rgba.length; k += 4) {
-    const r = rgba[k];
-    const g = rgba[k + 1];
-    const b = rgba[k + 2];
-    const d = Math.min(
-      1,
-      (Math.hypot(r - bg[0], g - bg[1], b - bg[2]) / 255) * 2.4,
-    );
-    const sat = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
-    if (sat > 0.22) {
-      // Colour: keep the hue, lift it so it holds up on black.
-      const lift = 1.15;
-      rgba[k] = Math.min(255, r * lift);
-      rgba[k + 1] = Math.min(255, g * lift);
-      rgba[k + 2] = Math.min(255, b * lift);
-    } else {
-      rgba[k] = BONE[0];
-      rgba[k + 1] = BONE[1];
-      rgba[k + 2] = BONE[2];
-    }
-    rgba[k + 3] = Math.round(255 * (0.07 + 0.93 * d));
-  }
-}
-
-/**
- * Chapter 5 — proof. A project picture as a dot matrix laid over `rect`
- * (top-left CSS px). Particles left over after the grid is full sit invisible
- * inside the picture, so they have somewhere sensible to fly from and to.
- */
-export function picture(
-  n: number,
-  w: number,
-  h: number,
-  pic: Picture,
-  rect: Rect = projectRect(w, h),
-  seed = 89,
-): ShapeData {
-  const r = rng(seed);
+export function field(n: number, w: number, h: number): ShapeData {
+  const r = rng(89);
   const s = alloc(n);
-  const st = toStage(rect, w, h);
-  const sx = rect.w / pic.cols;
-  const sy = rect.h / pic.rows;
-  let i = 0;
-  for (let y = 0; y < pic.rows; y++) {
-    for (let x = 0; x < pic.cols; x++, i++) {
-      const k = (y * pic.cols + x) * 4;
-      put(s, i, (x + 0.5) * sx - rect.w / 2, rect.h / 2 - (y + 0.5) * sy, 0, [
-        pic.rgba[k],
-        pic.rgba[k + 1],
-        pic.rgba[k + 2],
-        pic.rgba[k + 3],
-      ]);
-    }
+  const shown = Math.floor(n * 0.35);
+  for (let i = 0; i < n; i++) {
+    put(
+      s,
+      i,
+      (r() - 0.5) * w * 1.3,
+      (r() - 0.5) * h * 1.3,
+      (r() - 0.5) * 700,
+      i < shown ? (r() < 0.04 ? [255, 74, 28, 70] : DUST) : [0, 0, 0, 0],
+    );
   }
-  for (; i < n; i++) {
-    put(s, i, (r() - 0.5) * rect.w, (r() - 0.5) * rect.h, 0, [0, 0, 0, 0]);
-  }
-  return {
-    ...s,
-    center: [st.cx, st.cy, 0],
-    // Slightly under the pitch so each sample stays a distinct dot.
-    size: Math.max(1.4, Math.min(sx, sy) * 0.86),
-    mode: 0,
-    pulse: 0,
-  };
+  return { ...s, center: [0, 0, 0], size: 1.6, mode: 2, pulse: 0 };
 }
 
 /**

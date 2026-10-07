@@ -22,25 +22,3 @@ export const chapter = {
     };
   },
 };
-
-/**
- * Home → case study hand-off. The home page sets the slug just before it
- * navigates; the case study's cover reads it to know the particles are holding
- * its picture and it should fade in over them rather than play its own reveal.
- */
-let pending: string | null = null;
-export const handoff = {
-  /** Called by the home page just before it navigates. */
-  begin(slug: string) {
-    pending = slug;
-  },
-  /** Is a hand-off to `slug` in flight? Clears it either way. */
-  take(slug: string) {
-    const hit = pending === slug;
-    pending = null;
-    return hit;
-  },
-  get active() {
-    return pending !== null;
-  },
-};

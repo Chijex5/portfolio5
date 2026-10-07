@@ -1,18 +1,17 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import LocalTime from "@/components/shared/LocalTime";
-import { chapter, handoff } from "@/lib/chapter";
+import { chapter } from "@/lib/chapter";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 import { intro } from "@/lib/intro";
 import { CONTACT, SOCIAL_LINKS } from "@/lib/nav";
 import { projects } from "@/lib/projects";
 import { getLenis, lockScroll, recallStory, rememberStory } from "@/lib/scroll";
-import { projectRect } from "@/lib/stage/layout";
 import { stage, type ShapeId } from "@/lib/stage/stage";
+import ProjectChapter from "@/components/work/ProjectChapter";
+import { SCENES } from "@/components/work/scenes";
 
 /**
  * The home page: one story told in eight beats, drawn by the particle stage.
@@ -22,7 +21,7 @@ import { stage, type ShapeId } from "@/lib/stage/stage";
  *   shape    a schema         — first, the data
  *   flow     a live graph     — then the wiring
  *   surface  browser + phone  — then the part people touch
- *   proof    six pictures     — what came out of it
+ *   proof    six scenes       — what came out of it, each acted out
  *   me       a Lagos sunset   — who
  *   hello    "Say hello."     — the ask
  *
@@ -36,18 +35,12 @@ import { stage, type ShapeId } from "@/lib/stage/stage";
 
 type Beat = {
   id: string;
-  /** Shape on arrival; for the proof chapter, its first picture. */
   shape: ShapeId;
-  /** Shape on departure, when it differs (proof ends on the last picture). */
-  last?: ShapeId;
   index: string;
   label: string;
   /** Section height, in viewport heights. */
   vh: number;
 };
-
-/** Scroll given to each project in the proof chapter, in viewport heights. */
-const SLOT = 0.9;
 
 const BEATS: readonly Beat[] = [
   { id: "top", shape: "knot", index: "00", label: "Intro", vh: 1 },
@@ -55,14 +48,9 @@ const BEATS: readonly Beat[] = [
   { id: "shape", shape: "schema", index: "02", label: "Shape", vh: 1.8 },
   { id: "flow", shape: "flow", index: "03", label: "Flow", vh: 1.8 },
   { id: "surface", shape: "surface", index: "04", label: "Surface", vh: 1.8 },
-  {
-    id: "work",
-    shape: "p0",
-    last: `p${projects.length - 1}`,
-    index: "05",
-    label: "Proof",
-    vh: 1 + projects.length * SLOT,
-  },
+  // The projects carry this chapter themselves; the stage drops to a quiet
+  // field behind them. Its height is the sum of the project chapters.
+  { id: "work", shape: "field", index: "05", label: "Proof", vh: 0 },
   { id: "me", shape: "calm", index: "06", label: "Me", vh: 1.8 },
   { id: "contact", shape: "hello", index: "07", label: "Hello", vh: 1.6 },
 ];
@@ -81,10 +69,6 @@ export default function Story() {
       const sections = BEATS.map((b) =>
         el.querySelector<HTMLElement>(`#${b.id}`)!,
       );
-      const captions = gsap.utils.toArray<HTMLElement>("[data-caption]", el);
-      const plates = gsap.utils.toArray<HTMLElement>("[data-plate]", el);
-      const counter = el.querySelector<HTMLElement>("[data-counter]");
-
       // Coming back from a case study: the intro has played, so no waiting on it.
       const returning = stage.introduced;
       stage.show(true);
@@ -92,61 +76,9 @@ export default function Story() {
 
       // --- Geometry ---------------------------------------------------------
       let tops: number[] = [];
-      let heights: number[] = [];
       const measure = () => {
         tops = sections.map(
           (s) => s.getBoundingClientRect().top + window.scrollY,
-        );
-        heights = sections.map((s) => s.offsetHeight);
-        const r = projectRect(window.innerWidth, window.innerHeight);
-        plates.forEach((p) => {
-          Object.assign(p.style, {
-            left: `${r.x}px`,
-            top: `${r.y}px`,
-            width: `${r.w}px`,
-            height: `${r.h}px`,
-          });
-        });
-      };
-
-      // --- Proof captions ---------------------------------------------------
-      let shown = 0;
-      gsap.set(captions.slice(1), { autoAlpha: 0 });
-      plates.forEach((p, i) => p.toggleAttribute("data-active", i === 0));
-      const showProject = (next: number) => {
-        if (next === shown) return;
-        const prev = shown;
-        shown = next;
-        const dir = next > prev ? 1 : -1;
-        plates.forEach((p, i) => p.toggleAttribute("data-active", i === next));
-        if (counter) counter.textContent = String(next + 1).padStart(2, "0");
-        const out = captions[prev].querySelectorAll("[data-cap]");
-        const inn = captions[next].querySelectorAll("[data-cap]");
-        gsap.killTweensOf([out, inn, captions[prev], captions[next]]);
-        if (reduced) {
-          gsap.set(captions[prev], { autoAlpha: 0 });
-          gsap.set(captions[next], { autoAlpha: 1 });
-          gsap.set(inn, { yPercent: 0 });
-          return;
-        }
-        gsap.to(out, {
-          yPercent: -110 * dir,
-          duration: 0.5,
-          ease: "power3.in",
-          stagger: 0.03,
-          onComplete: () => gsap.set(captions[prev], { autoAlpha: 0 }),
-        });
-        gsap.set(captions[next], { autoAlpha: 1 });
-        gsap.fromTo(
-          inn,
-          { yPercent: 110 * dir },
-          {
-            yPercent: 0,
-            duration: 0.9,
-            ease: "expo.out",
-            stagger: 0.05,
-            delay: 0.25,
-          },
         );
       };
 
@@ -168,25 +100,7 @@ export default function Story() {
           if (entry < 1) {
             // The morph runs through the middle of the entry, so it settles just
             // as the chapter's copy arrives.
-            stage.set(
-              prev.last ?? prev.shape,
-              beat.shape,
-              clamp((entry - 0.08) / 0.78),
-            );
-            if (beat.id === "work") showProject(0);
-          } else if (beat.id === "work") {
-            const span = heights[i] - vh;
-            const q = Math.min(0.9999, clamp((y - tops[i]) / span));
-            const k = Math.floor(q * projects.length);
-            const f = q * projects.length - k;
-            if (k === 0) {
-              stage.set("p0", "p0", 1);
-              showProject(0);
-            } else {
-              const m = clamp(f / 0.42);
-              stage.set(`p${k - 1}`, `p${k}`, m);
-              showProject(m < 0.5 ? k - 1 : k);
-            }
+            stage.set(prev.shape, beat.shape, clamp((entry - 0.08) / 0.78));
           } else {
             stage.set(beat.shape, beat.shape, 1);
           }
@@ -353,27 +267,28 @@ export default function Story() {
     { scope: root },
   );
 
-  // Leaving the page: unless a case-study hand-off owns the stage, fade it out.
-  useEffect(
-    () => () => {
-      if (!handoff.active) stage.show(false, 0.3);
-    },
-    [],
-  );
+  // Leaving the page: the stage has nothing to show elsewhere.
+  useEffect(() => () => stage.show(false, 0.3), []);
 
-  const open = (e: { preventDefault(): void }, i: number) => {
+  // Opening a case study: let the story fade before the route changes, and
+  // remember where it was so Back returns to this project.
+  const open = (e: { preventDefault(): void }, slug: string) => {
     e.preventDefault();
     if (busy.current) return;
     busy.current = true;
-    const slug = projects[i].slug;
-    handoff.begin(slug);
     rememberStory();
     lockScroll(true);
-    gsap.to(root.current, { autoAlpha: 0, duration: 0.45, ease: "power2.out" });
-    stage.toCover(i).then(() => {
-      getLenis()?.scrollTo(0, { immediate: true, force: true });
-      window.scrollTo(0, 0);
-      router.push(`/work/${slug}`, { scroll: false });
+    stage.show(false, 0.5);
+    gsap.to(root.current, {
+      autoAlpha: 0,
+      duration: 0.5,
+      ease: "power2.inOut",
+      onComplete: () => {
+        getLenis()?.scrollTo(0, { immediate: true, force: true });
+        window.scrollTo(0, 0);
+        lockScroll(false);
+        router.push(`/work/${slug}`, { scroll: false });
+      },
     });
   };
 
@@ -465,82 +380,23 @@ export default function Story() {
         </p>
       </Chapter>
 
-      {/* 05 — Proof --------------------------------------------------------- */}
-      <section
-        id="work"
-        className="relative"
-        style={{ height: `${BEATS[5].vh * 100}svh` }}
-      >
-        <div className="sticky top-0 h-svh overflow-clip">
-          {projects.map((p, i) => (
-            <Link
+      {/* 05 — Proof: each project acts itself out ------------------------ */}
+      <section id="work" className="relative">
+        <h2 className="sr-only">Selected work</h2>
+        {projects.map((p, i) => {
+          const scene = SCENES[p.slug];
+          if (!scene) return null;
+          return (
+            <ProjectChapter
               key={p.slug}
-              href={`/work/${p.slug}`}
-              data-plate
-              data-cursor="View"
-              aria-hidden="true"
-              tabIndex={-1}
-              onNavigate={(e) => open(e, i)}
-              className="group absolute block opacity-0 data-[active]:opacity-100 [&:not([data-active])]:pointer-events-none"
-            >
-              {p.cover ? (
-                <Image
-                  src={p.cover.plate ?? p.cover.src}
-                  alt=""
-                  fill
-                  sizes="60vw"
-                  className="gl-fallback object-cover"
-                />
-              ) : null}
-            </Link>
-          ))}
-
-          <div
-            data-exit
-            className="absolute inset-x-4 bottom-20 md:inset-x-10 md:bottom-24"
-          >
-            <Eyebrow index="05" label="Proof">
-              <span className="text-bone-muted ml-auto tabular-nums md:ml-6">
-                <span data-counter className="text-bone">
-                  01
-                </span>{" "}
-                / {String(projects.length).padStart(2, "0")}
-              </span>
-            </Eyebrow>
-            <ol className="relative grid">
-              {projects.map((p, i) => (
-                <li
-                  key={p.slug}
-                  data-caption
-                  className="col-start-1 row-start-1"
-                >
-                  <h2 className="display text-[clamp(2.6rem,5.4vw,6.5rem)] md:max-w-[9ch]">
-                    <Link
-                      href={`/work/${p.slug}`}
-                      onNavigate={(e) => open(e, i)}
-                      data-cursor="View"
-                      className="line-mask block"
-                    >
-                      <span data-cap className="block">
-                        {p.title}
-                      </span>
-                    </Link>
-                  </h2>
-                  <p className="line-mask mt-4 max-w-[26ch] text-[clamp(1.05rem,1.5vw,1.35rem)] leading-snug tracking-[-0.01em] md:mt-6">
-                    <span data-cap className="text-bone-muted block">
-                      {p.line}
-                    </span>
-                  </p>
-                  <p className="line-mask label mt-4">
-                    <span data-cap className="text-bone-muted block">
-                      {p.category} · {p.year}
-                    </span>
-                  </p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
+              project={p}
+              index={i}
+              total={projects.length}
+              scene={scene}
+              onOpen={(e) => open(e, p.slug)}
+            />
+          );
+        })}
       </section>
 
       {/* 06 — Me ------------------------------------------------------------ */}

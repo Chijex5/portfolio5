@@ -1,21 +1,17 @@
-import { projects } from "@/lib/projects";
 import { gsap } from "@/lib/gsap";
-import { COVER_ASPECT, coverRect, isMobile } from "./layout";
+import { isMobile } from "./layout";
 import { fill, program, texture, upload, type Uniforms } from "./gl";
 import { fragmentShader, vertexShader } from "./shaders";
 import {
   calm,
+  field,
   flow,
   hello,
   knot,
   noise,
-  picture,
-  pictureGrid,
-  samplePicture,
   schema,
   seed,
   surface,
-  type Picture,
   type ShapeData,
 } from "./shapes";
 
@@ -23,11 +19,8 @@ import {
  * The particle stage: one fixed, full-screen WebGL canvas that the whole site
  * draws its story on.
  *
- * A module singleton rather than React state, because it outlives pages. The
- * canvas sits in the root layout; when you open a case study the home page
- * unmounts, but the particles keep the project picture on screen until the case
- * study's own <img> is ready to take over, which is what makes that hand-off
- * seamless.
+ * A module singleton rather than React state: it outlives page changes, and
+ * code outside React (the preloader, the scroll provider) talks to it.
  *
  * Driving it: something (the home story) calls `set(from, to, mix)` as the page
  * scrolls. The stage never reads scroll itself.
@@ -42,8 +35,7 @@ export type ShapeId =
   | "surface"
   | "calm"
   | "hello"
-  | "cover"
-  | `p${number}`;
+  | "field";
 
 type Slot = { pos: WebGLTexture; col: WebGLTexture; data: ShapeData };
 
@@ -90,8 +82,6 @@ class Stage {
     uDpr: { type: "f", value: 1 },
     uCamZ: { type: "f", value: 1 },
     uMotion: { type: "f", value: 1 },
-    uSweep: { type: "f", value: 0 },
-    uViewW: { type: "f", value: 1 },
     uMouse: { type: "v2", value: [99999, 99999] },
     uMouseR: { type: "f", value: 130 },
     uMouseF: { type: "f", value: 0 },
@@ -106,7 +96,6 @@ class Stage {
     },
   });
   private slots = new Map<ShapeId, Slot>();
-  private pictures: Picture[] = [];
   private family = "sans-serif";
   private w = 0;
   private h = 0;
@@ -213,32 +202,6 @@ class Stage {
       .catch(() => undefined)
       .then(() => this.report(this.progress + 0.1));
 
-    // Project pictures, sampled once at the particle grid's resolution. The
-    // decode and the downscale happen off the main thread (createImageBitmap);
-    // only a few hundred pixels across ever reach a canvas here.
-    const grid = pictureGrid(this.n, COVER_ASPECT);
-    let loaded = 0;
-    this.pictures = await Promise.all(
-      projects.map(async (p) => {
-        try {
-          const src = await bitmap(
-            p.cover?.plate ?? p.cover?.src ?? "",
-            grid.cols,
-            grid.rows,
-          );
-          return samplePicture(src, grid.cols, grid.rows);
-        } catch {
-          return {
-            cols: grid.cols,
-            rows: grid.rows,
-            rgba: new Uint8ClampedArray(grid.cols * grid.rows * 4).fill(60),
-          };
-        } finally {
-          loaded++;
-          this.report(0.2 + (loaded / projects.length) * 0.4);
-        }
-      }),
-    );
     await fontReady;
 
     // One shape per task, so building the story never blocks input for long.
@@ -246,7 +209,7 @@ class Stage {
     for (let i = 0; i < steps.length; i++) {
       steps[i]();
       if (i === 1) this.apply();
-      this.report(0.6 + ((i + 1) / steps.length) * 0.4);
+      this.report(0.2 + ((i + 1) / steps.length) * 0.8);
       await yieldTask();
     }
     this.apply();
@@ -304,9 +267,7 @@ class Stage {
       () => this.slot("schema", schema(n, w, h)),
       () => this.slot("flow", flow(n, w, h)),
       () => this.slot("surface", surface(n, w, h)),
-      ...this.pictures.map(
-        (pic, i) => () => this.slot(`p${i}`, picture(n, w, h, pic)),
-      ),
+      () => this.slot("field", field(n, w, h)),
       () => this.slot("calm", calm(n, w, h)),
       () => this.slot("hello", hello(n, w, h, this.family)),
     ];
@@ -335,9 +296,6 @@ class Stage {
     this.f.uPulseA = a.data.pulse;
     this.f.uPulseB = b.data.pulse;
     this.f.uMix = this.mix;
-    const pic = (id: ShapeId) => id === "cover" || /^p\d+$/.test(id);
-    this.f.uSweep =
-      pic(this.from) && pic(this.to) && this.from !== this.to ? 1 : 0;
   }
 
   /** Scroll-driven: show `from` blending into `to` by `mix` (0–1). */
@@ -386,42 +344,6 @@ class Stage {
   skipIntro() {
     this.f.uIntro = 1;
     this.introduced = true;
-  }
-
-  /**
-   * Page transition, home → case study. Lays the current project's picture out
-   * where the case study's cover will be and morphs to it. The stage stays
-   * locked on that picture until `handoff()`.
-   */
-  toCover(index: number) {
-    const pic = this.pictures[index];
-    if (!this.gl || !pic) return Promise.resolve();
-    const r = coverRect(this.w);
-    this.slot("cover", picture(this.n, this.w, this.h, pic, r, 89));
-    this.from = `p${index}`;
-    this.to = "cover";
-    this.mix = 0;
-    this.locked = true;
-    this.apply();
-    return new Promise<void>((resolve) => {
-      gsap.to(this, {
-        mix: 1,
-        duration: this.reduced ? 0.01 : 1.15,
-        ease: "expo.inOut",
-        onUpdate: () => this.apply(),
-        onComplete: resolve,
-      });
-    });
-  }
-
-  /** The case study's own cover is on screen: get out of its way. */
-  handoff() {
-    gsap.to(this, {
-      visible: 0,
-      duration: 0.6,
-      ease: "power2.inOut",
-      overwrite: true,
-    });
   }
 
   // -------------------------------------------------------------------------
@@ -482,7 +404,6 @@ class Stage {
     // Place the camera so 1 unit at z = 0 is exactly 1 CSS px.
     this.f.uCamZ = this.h / 2 / Math.tan((FOV * Math.PI) / 360);
     this.f.uAspect = this.w / this.h;
-    this.f.uViewW = this.w;
     this.f.uMouseR = Math.min(this.w, this.h) * 0.14;
   }
 
@@ -541,30 +462,6 @@ class Stage {
 /** Hand the main thread back between chunks of work. */
 function yieldTask() {
   return new Promise<void>((resolve) => setTimeout(resolve, 0));
-}
-
-/**
- * A picture decoded and resized to `w`×`h` off the main thread. Falls back to a
- * plain decode where createImageBitmap does not take resize options.
- */
-async function bitmap(
-  url: string,
-  w: number,
-  h: number,
-): Promise<CanvasImageSource> {
-  const blob = await (await fetch(url)).blob();
-  try {
-    return await createImageBitmap(blob, {
-      resizeWidth: w,
-      resizeHeight: h,
-      resizeQuality: "high",
-    });
-  } catch {
-    const img = new Image();
-    img.src = URL.createObjectURL(blob);
-    await img.decode();
-    return img;
-  }
 }
 
 export const stage = new Stage();
