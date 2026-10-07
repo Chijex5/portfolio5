@@ -1,7 +1,7 @@
 import type { Project } from "@/lib/types";
 
 /**
- * The work. Order here is the order on the page and in the carousel, so lead with
+ * The work. Order here is the order of the proof chapter, so lead with
  * the strongest piece.
  *
  * Covers are screenshots of the live deployments, captured by
@@ -16,6 +16,7 @@ export const projects: readonly Project[] = [
     title: "D'Footprint",
     category: "E-commerce",
     year: 2026,
+    line: "My sister's brand deserved a storefront she controls.",
     blurb:
       "Built for my sister's footwear brand after I got tired of seeing small businesses settle for storefronts they couldn't really control.",
     tags: ["Next.js", "Tailwind", "Paystack", "PostgreSQL"],
@@ -45,6 +46,7 @@ export const projects: readonly Project[] = [
     title: "Jobless",
     category: "Tooling",
     year: 2026,
+    line: "Five job boards a day was four too many.",
     blurb:
       "Job hunting is already frustrating. Looking across five different job boards every day makes it worse.",
     tags: ["Python", "AI Validation", "Web Scraping", "MongoDB"],
@@ -77,6 +79,7 @@ export const projects: readonly Project[] = [
     title: "Wayframe",
     category: "AI tooling",
     year: 2026,
+    line: "I kept forgetting to design screens.",
     blurb: "This exists because I kept forgetting screens.",
     tags: ["Next.js", "TypeScript", "LLMs", "React Flow"],
     cover: {
@@ -109,6 +112,7 @@ export const projects: readonly Project[] = [
     title: "Blog",
     category: "Publishing",
     year: 2026,
+    line: "Blogging platforms are built for teams. I'm one person.",
     blurb:
       "Most blogging platforms are built for teams. I wanted one built for me.",
     tags: ["Next.js", "PostgreSQL", "TipTap", "Resend"],
@@ -138,6 +142,7 @@ export const projects: readonly Project[] = [
     title: "PicPress",
     category: "Utility",
     year: 2026,
+    line: "Twenty photos shouldn't make a 300MB PDF.",
     blurb:
       "A friend sends twenty iPhone photos. You turn them into a PDF. The PDF is somehow 300MB. That's the entire reason this project exists.",
     tags: ["React", "Next.js", "Client-side Processing", "PDF Generation"],
@@ -171,6 +176,7 @@ export const projects: readonly Project[] = [
     title: "Precious & Emmanuel",
     category: "Client project",
     year: 2026,
+    line: "A wedding, real guests, and a date that wouldn't move.",
     blurb:
       "A wedding website comes with something most side projects don't: an immovable deadline.",
     tags: ["Next.js", "PostgreSQL", "RSVP System", "Ticket Generation"],

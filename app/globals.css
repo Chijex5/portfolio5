@@ -1,41 +1,38 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * Design tokens — see portfolio-build-plan.md §4
+ * Tokens. Dark ink, bone type, one vermilion signal — the same three
+ * colours the particle stage draws with (lib/stage/shapes.ts).
  * ------------------------------------------------------------------ */
 :root {
-  --paper: #f4f1ea; /* warm off-white */
-  --ink: #14110f; /* warm near-black */
-  --ink-muted: color-mix(in oklab, var(--ink) 55%, transparent);
-  --signal: #ff4a1c; /* vermilion accent — used sparingly */
+  --ink: #0a0a0a;
+  --ink-raised: #141312;
+  --bone: #ede8df;
+  --bone-muted: color-mix(in oklab, var(--bone) 56%, transparent);
+  --bone-faint: color-mix(in oklab, var(--bone) 16%, transparent);
+  --signal: #ff4a1c;
 
-  --content-max: 1600px;
-}
-
-/* Theme-ready: dark palette wired but inactive (light ships first, §12).
-   Activate later by setting data-theme="dark" on <html>. */
-[data-theme="dark"] {
-  --paper: #14110f;
-  --ink: #f4f1ea;
-  --ink-muted: color-mix(in oklab, var(--ink) 55%, transparent);
-  --signal: #ff6a42;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-paper: var(--paper);
   --color-ink: var(--ink);
-  --color-ink-muted: var(--ink-muted);
+  --color-ink-raised: var(--ink-raised);
+  --color-bone: var(--bone);
+  --color-bone-muted: var(--bone-muted);
+  --color-bone-faint: var(--bone-faint);
   --color-signal: var(--signal);
 
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --font-body: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", monospace;
+  --font-display: var(--font-display-family), system-ui, sans-serif;
+  --font-serif: var(--font-serif-family), Georgia, serif;
+  --font-mono: var(--font-mono-family), ui-monospace, monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
 }
 
 /* ------------------------------------------------------------------ *
- * Lenis (smooth scroll) base styles
+ * Lenis
  * ------------------------------------------------------------------ */
 html.lenis,
 html.lenis body {
@@ -47,381 +44,177 @@ html.lenis body {
 .lenis.lenis-smooth [data-lenis-prevent] {
   overscroll-behavior: contain;
 }
-.lenis.lenis-stopped {
+.lenis.lenis-stopped,
+html.is-locked {
   overflow: hidden;
-}
-.lenis.lenis-smooth iframe {
-  pointer-events: none;
 }
 
 /* ------------------------------------------------------------------ *
  * Base
  * ------------------------------------------------------------------ */
 html {
-  /* Clearance for the fixed header when the browser handles a hash jump
-     (arriving at /#work from another route). Matches HEADER.offset in
-     lib/tokens.ts, which Lenis uses for same-page anchors. */
-  scroll-padding-top: 6rem;
+  scroll-padding-top: 0;
+  background: var(--ink);
 }
 
 body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-body);
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-
-  /* Net, not the fix. Every component that throws a box sideways clips itself
-     (see LiquidCarousel); this only guarantees that one that forgets can never
-     hand the whole document a horizontal scrollbar.
-
-     `clip` rather than `hidden` on purpose:
-       - `hidden` would make <body> a scroll container, which breaks the sticky
-         column in About and gives Lenis a second scrollable box to argue with;
-       - `clip` clips without ever scrolling, and leaves position: sticky alone.
-     The y axis must stay `visible` — the page scrolls. */
+  /* `clip`, not `hidden`: hidden would make <body> a scroll container and break
+     every `position: sticky` chapter on the home page. */
   overflow-x: clip;
 }
 
 ::selection {
   background: var(--signal);
-  color: var(--paper);
+  color: var(--ink);
 }
 
 :focus-visible {
-  outline: 2px solid var(--signal);
-  outline-offset: 3px;
+  outline: 1px solid var(--signal);
+  outline-offset: 4px;
+}
+
+/* A custom cursor replaces the system one only where there is a fine pointer
+   and the visitor has not asked for less motion (see Cursor.tsx). */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html.has-cursor,
+  html.has-cursor * {
+    cursor: none !important;
+  }
 }
 
 /* ------------------------------------------------------------------ *
- * Kinetic type — registered axis properties
- *
- * `font-variation-settings` takes a string, and strings don't interpolate. So the
- * axes live in typed custom properties instead: `@property` gives each one a
- * `<number>` syntax, which means the browser (and GSAP's CSSPlugin) can animate it
- * as a number and substitute the result into the declaration below.
- *
- * `inherits: true` matters. SplitText rewraps a headline into per-line children, so
- * whatever drives the morph has to reach text that didn't exist when the page
- * loaded. `font-variation-settings` is itself an inherited property, so one
- * declaration on the element covers every line inside it.
- *
- * Initial values are the resting cut: 400 at optical size 48, no softness, no
- * wonk. That is what no-JS and reduced-motion visitors see, and it is a finished
- * heading rather than a half-played animation.
+ * Type helpers
  * ------------------------------------------------------------------ */
-@property --wght {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 400;
-}
-@property --opsz {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 48;
-}
-@property --soft {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
-}
-@property --wonk {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
+.display {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
 }
 
-/* Cursor position within a plate, as a fraction of its box. Written by the
-   pointermove handler in WorkRow, read by `.plate-sheen` — which is a child, so
-   these have to inherit. */
-@property --mx {
-  syntax: "<percentage>";
-  inherits: true;
-  initial-value: 50%;
-}
-@property --my {
-  syntax: "<percentage>";
-  inherits: true;
-  initial-value: 50%;
+/* The one word per chapter that carries the turn. */
+.turn {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--signal);
+  /* Instrument Serif sits small next to the grotesk at the same size. */
+  font-size: 1.08em;
+  padding-right: 0.04em;
 }
 
-/* 0..1 cursor speed, published by MagneticButton every frame. */
-@property --magnet-speed {
-  syntax: "<number>";
-  inherits: true;
-  initial-value: 0;
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1.4;
 }
 
-/* Put `.kinetic` on the type element itself, never on a wrapper: the declaration
-   is inherited, and `"wght"` in font-variation-settings outranks `font-weight`, so
-   a container would flatten the weight of every label nested inside it.
-
-   Axis order matches AXIS_VARS in lib/kinetic.ts. */
-.kinetic {
-  font-variation-settings:
-    "wght" var(--wght),
-    "opsz" var(--opsz),
-    "SOFT" var(--soft),
-    "WONK" var(--wonk);
-}
-
-/* ------------------------------------------------------------------ *
- * Component motion (CSS-only — no GSAP needed at this scale)
- * ------------------------------------------------------------------ */
-
-/* Magnetic buttons: GSAP owns the transform, CSS owns the lift. At rest the
-   shadow has zero size and zero alpha, so this costs nothing until the cursor
-   actually moves — then the button reads as peeling off the paper.
-   The child, not the wrapper, because the wrapper is the element being tweened
-   and a filter on it would force the shadow to be re-rasterised every frame. */
-.magnet > * {
-  filter: drop-shadow(
-    0 calc(var(--magnet-speed) * 6px) calc(var(--magnet-speed) * 14px)
-      color-mix(
-        in oklab,
-        var(--ink) calc(var(--magnet-speed) * 26%),
-        transparent
-      )
-  );
-}
-
-/* Plate sheen: a soft highlight that tracks the cursor across a work cover. The
-   gradient is the whole effect — JS only writes --mx/--my. */
-.plate-sheen {
-  background: radial-gradient(
-    28rem circle at var(--mx) var(--my),
-    color-mix(in oklab, var(--paper) 42%, transparent),
-    transparent 46%
-  );
-  mix-blend-mode: soft-light;
-  opacity: 0;
-  transition: opacity 0.6s var(--ease-out-expo);
-}
-
-[data-plate]:hover .plate-sheen {
-  opacity: 1;
-}
-
-/* Hero scroll cue: a hairline that runs down, then out the bottom. */
-@keyframes scroll-cue {
+/* The scroll cue's falling drop. */
+@keyframes drip {
   0% {
-    transform: scaleY(0);
-    transform-origin: top;
+    transform: translateY(-100%);
   }
-  45% {
-    transform: scaleY(1);
-    transform-origin: top;
-  }
-  55% {
-    transform: scaleY(1);
-    transform-origin: bottom;
-  }
+  60%,
   100% {
-    transform: scaleY(0);
-    transform-origin: bottom;
+    transform: translateY(200%);
   }
 }
 
-.scroll-cue {
-  animation: scroll-cue 2.6s var(--ease-out-expo) infinite;
-}
-
-/* SplitText's line masks clip to the line box, which a tight display leading
-   would cut through — the padding buys back the descenders. The mask then gives
-   the same amount back as negative margin, so the split headline occupies exactly
-   the height it did as one text block: no layout shift when the split runs after
-   hydration, and no gap between the motion and reduced-motion layouts.
-   (SplitText derives the mask's class from linesClass + "-mask".) */
-.split-line {
-  /* 0.18em, not 0.12em: Fraunces at display size with 0.96 leading puts the 'y'
-     of "actually" below the line box, and the mask clips exactly at that box, so
-     the tail of the descender was being cut off in the hero. The mask gives the
-     same amount back as negative margin below, so the block still occupies the
-     height it did as one text node. */
-  padding-bottom: 0.18em;
-}
-
-.split-line-mask {
-  margin-bottom: -0.18em;
+/* SplitText line masks. */
+.line-mask {
+  overflow: clip;
+  /* Room for descenders and the serif's overhang, which `clip` would cut. */
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
 }
 
 /* ------------------------------------------------------------------ *
- * Hero intro — pre-paint state
- * ------------------------------------------------------------------ *
- *
- * The hero's opening sequence is a GSAP timeline, but GSAP cannot run before
- * hydration, and hydration cannot run before the server HTML has painted. So the
- * *starting* state of the intro has to be expressed in CSS or there is no intro:
- * the finished hero paints, then the timeline yanks it back to hidden and plays a
- * reveal the visitor has already watched arrive.
- *
- * Only opacity is set here, never a transform. Transforms are GSAP's to own (one
- * writer per element — the rule this section is built on), and opacity cannot
- * shift layout, so the pre-intro state costs nothing in CLS.
- *
- * Three guards, all load-bearing:
- *   [data-js]  — set by the inline script in app/layout.tsx before first paint.
- *                Without JS nothing is hidden, because nothing would un-hide it.
- *   no-preference — reduced-motion visitors get the finished hero, not a fade.
- *   .intro-done — the timeline stamps this on the section when it completes, so
- *                 the rule stops applying and the elements keep their own styles
- *                 (a re-render must never be able to hide a hero that already
- *                 played).
- */
-@media (prefers-reduced-motion: no-preference) {
-  [data-js] [data-hero-intro]:not(.intro-done) [data-intro],
-  /* The statement too, matched by type because SplitReveal renders it and
-     forwards no attributes. It is the largest thing on the first screen, so a
-     flash of it in its finished state is the one most worth preventing — and it
-     is also the element whose masks carry the reveal once GSAP takes over. */
-  [data-js] [data-hero-intro]:not(.intro-done) h1 {
-    opacity: 0;
+ * The stage canvas
+ * ------------------------------------------------------------------ */
+.stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Case-study cover — its rect must match coverRect() in lib/stage/layout.ts,
+ * because the particles morph to exactly this box before the route changes.
+ * ------------------------------------------------------------------ */
+.case-cover {
+  margin: 72px 16px 0;
+  aspect-ratio: 16 / 11;
+}
+@media (min-width: 768px) {
+  .case-cover {
+    margin: 96px 40px 0;
   }
 }
 
-/* The failsafe.
- *
- * The rule above hides the hero on the promise that JavaScript will un-hide it,
- * and that promise can be broken: one chunk that 404s, one exception before the
- * matchMedia block, and the visitor is left looking at a blank first screen
- * behind a preloader that will never leave. Nothing inside React can catch that
- * — React is the thing that didn't arrive.
- *
- * So the only recovery that works is a timer in the blocking inline script in
- * app/layout.tsx, which stamps `data-intro-failed` on <html> if the reveal has
- * not happened by 8s (comfortably past the ~2.4s worst case). These rules are
- * what that stamp does: show the hero, drop the preloader.
- *
- * Both of these are (0,4,0), exactly like the gate above, so they win on source
- * order alone — which is why they sit immediately after it and why neither needs
- * !important. Keep them here.
- */
-[data-intro-failed] [data-hero-intro]:not(.intro-done) [data-intro],
-[data-intro-failed] [data-hero-intro]:not(.intro-done) h1 {
-  opacity: 1;
+/* ------------------------------------------------------------------ *
+ * Film grain. Static, so it composites once.
+ * ------------------------------------------------------------------ */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.05;
 }
 
-/* The preloader (components/intro/Preloader.tsx) is only ever wanted on a
-   scripted, motion-OK, first-of-tab visit that hasn't failed. Each guard removes
-   it outright rather than animating it away, so there is no frame in which a
-   panel covers content nothing is going to uncover.
-
-   Hidden by default and shown by the guarded rule, not the other way round: the
-   default has to be the safe state, because it is the one a visitor gets when
-   any assumption behind the other four turns out to be wrong.
-
-   Unlayered, so it stays after `@import "tailwindcss"` in the cascade — that is
-   what lets a bare attribute selector beat the layered `display` utility that
-   any later restyle of this component might bring with it. */
-[data-preloader] {
+/* ------------------------------------------------------------------ *
+ * Preloader. Painted from the server HTML so it covers the very first frame,
+ * but only where JavaScript runs (`data-js` is set by an inline script in the
+ * layout) — without JS there is nothing to wait for. The animation is the
+ * failsafe: if the script that dismisses it never runs, it gets out of the way
+ * on its own.
+ * ------------------------------------------------------------------ */
+.preloader {
   display: none;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  [data-js]:not([data-intro-seen]):not([data-intro-failed]) [data-preloader] {
-    display: block;
+html[data-js] .preloader {
+  display: flex;
+  animation: preloader-failsafe 0.4s 9s forwards;
+}
+@keyframes preloader-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
   }
 }
 
-/* Header "available for work" dot. */
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(0.8);
-  }
-}
+/* No pre-intro hiding is needed for the hero: with JS the preloader covers it
+   until the intro plays, and without JS there is no intro. Keeping it painted
+   underneath is also what lets the browser count it as the page's largest
+   paint at first render rather than when the preloader leaves. */
 
-.status-dot {
-  animation: pulse-dot 2.4s ease-in-out infinite;
+/* ------------------------------------------------------------------ *
+ * No WebGL: the DOM pictures the canvas would have drawn.
+ * ------------------------------------------------------------------ */
+.gl-fallback {
+  display: none;
+}
+html[data-nogl] .gl-fallback {
+  display: block;
 }
 
 /* ------------------------------------------------------------------ *
- * The liquid surface
+ * Reduced motion: nothing moves that does not have to.
  * ------------------------------------------------------------------ */
-
-/* The cursor lens (components/shared/LiquidLens.tsx). Geometry, opacity and
-   rotation are written by GSAP; everything visual lives here.
-
-   `plus-lighter` rather than `screen` or `overlay`: on warm paper it adds light
-   without shifting hue, so the lens reads as a wet highlight on the page instead
-   of a coloured gel over it. The vermilion is at a few percent — at anything
-   higher it stops being a surface and becomes a spotlight. */
-.liquid-lens {
-  background: radial-gradient(
-    circle closest-side,
-    color-mix(in oklab, var(--signal) 22%, transparent) 0%,
-    color-mix(in oklab, var(--signal) 9%, transparent) 38%,
-    transparent 72%
-  );
-  mix-blend-mode: plus-lighter;
-  /* No `filter: blur()`. It was 18px, and a filter on an element that transforms
-     every frame has to be recomputed every frame — on top of the blend. The
-     gradient's own stops are what make this soft; the blur was refining an edge
-     that was already 30% of the way to transparent, so removing it costs a barely
-     perceptible amount of feathering and one full per-frame filter pass. */
-  /* Promoted once, not per frame: this element transforms on every pointer move
-     for the life of the page, so it is the one place a permanent layer is right. */
-  will-change: transform, opacity;
-}
-
-/* Film grain over everything. Static noise, so it costs one paint and then
-   nothing — the movement people read as "grain crawling" is the page moving
-   underneath a fixed layer, which is free.
-
-   The SVG is inline rather than a file: it is smaller than the request that would
-   fetch it, and it can never arrive after first paint. */
-.grain {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
-  /* No `mix-blend-mode`. It was `multiply`, and a full-viewport blend layer makes
-     the compositor re-blend the entire screen on every frame anything underneath
-     it moves — which, on a page with a WebGL ring and six shearing bands, is every
-     frame of every scroll. A plain overlay composites once.
-
-     Opacity is up from 0.055 to compensate: multiply darkened the noise against
-     the paper, so straight alpha needs a little more to read at the same strength.
-     Still texture you notice only by its absence. */
-  opacity: 0.07;
-}
-
-/* Bands driven by ElasticProvider. The transform itself is written from JS; this
-   only makes sure the shear pivots about the band's own top edge, so a section
-   leans away from the one above it rather than rotating about its middle. */
-[data-elastic] {
-  transform-origin: 50% 0%;
-  backface-visibility: hidden;
-}
-
-/* Ambient loops are decorative — stop them outright rather than slow them.
-   Interaction-driven motion is gated separately (see MagneticButton). */
 @media (prefers-reduced-motion: reduce) {
-  .status-dot,
-  .scroll-cue {
-    animation: none;
-  }
-
-  /* Both of these are lit by cursor-tracking JS that doesn't run here, so
-     without this they'd hover as a centred blob and a shadow that never moves. */
-  .plate-sheen {
-    display: none;
-  }
-
-  .magnet > * {
-    filter: none;
-  }
-
-  /* The lens and the elastic shear are motion by definition — there is no
-     reduced version of either worth keeping, so they simply aren't there. Both
-     are gated in JS too; this covers the frame before hydration. */
-  .liquid-lens {
-    display: none;
-  }
-
-  [data-elastic] {
-    transform: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

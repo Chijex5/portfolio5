@@ -1,59 +1,52 @@
-import type { Metadata } from "next";
-import { Fraunces, Inter, JetBrains_Mono } from "next/font/google";
-import Preloader from "@/components/intro/Preloader";
-import Footer from "@/components/layout/Footer";
-import Header from "@/components/layout/Header";
+import type { Metadata, Viewport } from "next";
+import {
+  Instrument_Serif,
+  Inter_Tight,
+  JetBrains_Mono,
+} from "next/font/google";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
-import LiquidLens from "@/components/shared/LiquidLens";
-import { INTRO } from "@/lib/tokens";
+import Cursor from "@/components/shell/Cursor";
+import Hud from "@/components/shell/Hud";
+import Preloader from "@/components/shell/Preloader";
+import StageCanvas from "@/components/shell/StageCanvas";
 import "./globals.css";
 
-// Fraunces is the kinetic typeface, so it needs more than the weight axis. Google
-// serves only `wght` by default; the extra three are opt-in per axis, and without
-// them `font-variation-settings: "opsz" …` in `.kinetic` would silently do nothing.
-//   SOFT 0–100  roundness of the terminals
-//   WONK 0–1    swaps in the alternate, wonkier italic-ish forms
-//   opsz 9–144  optical size: low is spindly and fine, high is fat and contrasty
-// Ranges mirror AXES in lib/tokens.ts, which is what clamps the tween values.
-const fraunces = Fraunces({
+// The display face. The particle stage also sets "Say hello." in it, reading the
+// family back from this variable (lib/stage/stage.ts), so keep the name in step.
+const display = Inter_Tight({
   subsets: ["latin"],
-  axes: ["SOFT", "WONK", "opsz"],
-  variable: "--font-fraunces",
+  weight: ["400", "500", "600"],
+  variable: "--font-display-family",
   display: "swap",
 });
 
-const inter = Inter({
+// One italic word per chapter — the turn.
+const serif = Instrument_Serif({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: "400",
+  style: ["italic"],
+  variable: "--font-serif-family",
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-jetbrains",
+  weight: ["400"],
+  variable: "--font-mono-family",
   display: "swap",
 });
 
 /**
- * Absolute base for every relative URL in metadata — canonicals, Open Graph and
- * Twitter images.
- *
- * Without it Next resolves them against http://localhost:3000 and warns at build
- * time, which is not cosmetic: the case studies declare `openGraph.images` from
- * `project.cover.src`, so every social preview in production would point at a host
- * only the build machine can reach.
- *
- * `VERCEL_PROJECT_PRODUCTION_URL` is the production domain and is set on every
- * Vercel deployment including previews, so a preview build advertises the
- * production canonical rather than its own throwaway hostname — which is what you
- * want for OG and canonical tags. Local dev falls through to localhost.
+ * Absolute base for metadata URLs. `VERCEL_PROJECT_PRODUCTION_URL` is set on
+ * every Vercel deployment, previews included, so OG images and canonicals always
+ * point at production; local dev falls back to localhost.
  */
 const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : "http://localhost:3000";
 
 const DESCRIPTION =
-  "Chijioke Uzodinma is a full-stack developer in Lagos building web and mobile products with React, Next.js, TypeScript and FastAPI — from schema to interface.";
+  "Chijioke Uzodinma is a full-stack developer in Lagos. Every product he has built started as an annoyance — this is how they get untangled.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -69,13 +62,10 @@ export const metadata: Metadata = {
     "full-stack developer",
     "React",
     "Next.js",
-    "React Native",
     "TypeScript",
     "FastAPI",
     "Lagos",
   ],
-  // No OG image yet — the social card is part of the SEO/perf pass (M11), and a
-  // `twitter.card` of summary_large_image without one renders worse than summary.
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -83,10 +73,12 @@ export const metadata: Metadata = {
     title: "Chijioke Uzodinma — Full-stack developer",
     description: DESCRIPTION,
   },
-  twitter: {
-    card: "summary",
-    creator: "@chijex5",
-  },
+  twitter: { card: "summary", creator: "@chijex5" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -96,82 +88,34 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fraunces.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
+      className={`${display.variable} ${serif.variable} ${mono.variable}`}
     >
       <head>
-        {/* Three things that have to be settled *before first paint*, which is
-            what makes this a blocking inline script rather than an effect —
-            anything that runs after hydration is by definition too late.
-
-            1. `data-js` marks the document as scripted, which is what lets the
-               hero hold its pre-intro state in CSS (see globals.css). Without it
-               the hero had no intro at all from a visitor's point of view: the
-               server HTML painted the finished hero, then hydration ran, then
-               `gsap.from` snapped everything back to hidden and played the
-               reveal into a screen the user had already seen. Keyed off `data-js`
-               rather than a bare rule so the pre-intro state only ever applies
-               where there is JavaScript to undo it — no-JS visitors get the
-               finished hero immediately, which is also what they should get.
-
-            2. `data-intro-seen` is the once-per-tab flag. Read here rather than
-               in the component because it decides whether the preloader is
-               painted at all, and deciding that in React would either flash the
-               preloader or desync hydration.
-
-            3. The failsafe. Both of the above hide content on the promise that
-               JavaScript will show it again; this timer is what keeps that
-               promise when JavaScript never arrives. It is deliberately the
-               crudest possible mechanism, because it has to survive the failure
-               of everything more sophisticated. Cleared by the reveal
-               (lib/intro.ts); the CSS it triggers is in globals.css.
-
-            Only armed on a visit that will actually play the intro — on a repeat
-            visit there is nothing hidden to recover, and `scrollRestoration`
-            must stay automatic so a mid-page reload still lands where it left
-            off. */}
+        {/* Before first paint: mark the document as scripted, which is what lets
+            the preloader and the hero's pre-intro state exist at all (see
+            globals.css). Visitors without JS get the finished page. */}
         <script
           dangerouslySetInnerHTML={{
-            __html:
-              `var d=document.documentElement;d.setAttribute("data-js","");` +
-              `var s=false;try{s=sessionStorage.getItem("intro-played")==="1"}catch(e){}` +
-              `if(s){d.setAttribute("data-intro-seen","")}else{` +
-              `try{history.scrollRestoration="manual"}catch(e){}` +
-              `window.__introFailsafe=setTimeout(function(){` +
-              `d.setAttribute("data-intro-failed","")},${INTRO.failsafe * 1000})}`,
+            __html: `document.documentElement.setAttribute("data-js","");try{history.scrollRestoration="manual"}catch(e){}`,
           }}
         />
       </head>
-      <body className="font-body min-h-dvh">
+      <body className="min-h-dvh">
+        <a
+          href="#main"
+          className="label bg-signal text-ink fixed top-2 left-2 z-[110] -translate-y-24 px-3 py-2 focus:translate-y-0"
+        >
+          Skip to content
+        </a>
         <SmoothScrollProvider>
-          <Header />
+          <StageCanvas />
+          <Hud />
           {children}
-          <Footer />
-
-          {/* The surface passes, over the whole document.
-
-              The lens sits below the header (z-30 vs z-40) so it glides *under*
-              the nav rather than washing over it, and the grain sits above both
-              at z-50 — grain that the header escaped would make the header look
-              like it was floating off the page instead of printed on it.
-
-              Both are pointer-events-none and aria-hidden: nothing here is
-              interactive and nothing here is content. */}
-          <LiquidLens />
           <div
             aria-hidden="true"
             className="grain pointer-events-none fixed inset-0 z-50"
           />
-
-          {/* The opening, over everything at z-70.
-
-              Here rather than in the hero for two reasons. Its HTML is in the
-              initial payload, so it paints before hydration — there is nothing
-              to cover the load with if it arrives after it. And `root` on
-              ReactLenis means children get no wrapper element, so this is a
-              direct child of <body>: no transformed ancestor, and therefore no
-              containing block that could clip a full-bleed fixed panel. Inside
-              the hero it sat under `[data-elastic]`, which takes a transform on
-              the first frame of scroll velocity and did exactly that. */}
+          <Cursor />
           <Preloader />
         </SmoothScrollProvider>
       </body>
