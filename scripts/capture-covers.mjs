@@ -102,7 +102,7 @@ const TARGETS = [
     hide: [],
   },
   { slug: "wayframe", url: "https://wayframe.vercel.app" },
-  { slug: "blog", url: "https://chijioke.app" },
+  { slug: "voltiq", url: "https://volt-iq-chi.vercel.app" },
   {
     slug: "precious-and-emmanuel",
     url: "https://emmanuel-precious.vercel.app",
@@ -136,16 +136,19 @@ async function capture(browser, target) {
   // addInitScript, not addStyleTag: a style tag added before goto is discarded
   // with the document it was added to. This runs on every new document *before*
   // the page's own scripts, so the rule is in place before a toast can mount.
-  await context.addInitScript((css) => {
-    const apply = () => {
-      const style = document.createElement("style");
-      style.setAttribute("data-capture-hide", "");
-      style.textContent = css;
-      (document.head ?? document.documentElement).append(style);
-    };
-    if (document.head) apply();
-    else document.addEventListener("DOMContentLoaded", apply, { once: true });
-  }, `${HIDE_ALWAYS.join(",\n")} { display: none !important; }`);
+  await context.addInitScript(
+    (css) => {
+      const apply = () => {
+        const style = document.createElement("style");
+        style.setAttribute("data-capture-hide", "");
+        style.textContent = css;
+        (document.head ?? document.documentElement).append(style);
+      };
+      if (document.head) apply();
+      else document.addEventListener("DOMContentLoaded", apply, { once: true });
+    },
+    `${HIDE_ALWAYS.join(",\n")} { display: none !important; }`,
+  );
 
   const page = await context.newPage();
   const problems = [];
@@ -174,28 +177,32 @@ async function capture(browser, target) {
     // D'Footprint toast mounted about five seconds in, so a pass that ran early
     // reported "hid 0" and the toast walked into the frame afterwards. The
     // HIDE_ALWAYS rules are already covered by CSS from addInitScript.
-    const hidden = await page.evaluate((selectors) => {
-      let count = 0;
-      for (const selector of selectors) {
-        let nodes;
-        try {
-          nodes = document.querySelectorAll(selector);
-        } catch {
-          continue; // a [attr i] form this engine will not parse
+    const hidden = await page.evaluate(
+      (selectors) => {
+        let count = 0;
+        for (const selector of selectors) {
+          let nodes;
+          try {
+            nodes = document.querySelectorAll(selector);
+          } catch {
+            continue; // a [attr i] form this engine will not parse
+          }
+          for (const node of nodes) {
+            const style = getComputedStyle(node);
+            // Only things floating over the page — a class name is a hint, not proof.
+            if (style.position !== "fixed" && style.position !== "sticky")
+              continue;
+            // Never the site's own header.
+            const rect = node.getBoundingClientRect();
+            if (rect.top <= 4 && rect.width > innerWidth * 0.6) continue;
+            node.style.setProperty("display", "none", "important");
+            count++;
+          }
         }
-        for (const node of nodes) {
-          const style = getComputedStyle(node);
-          // Only things floating over the page — a class name is a hint, not proof.
-          if (style.position !== "fixed" && style.position !== "sticky") continue;
-          // Never the site's own header.
-          const rect = node.getBoundingClientRect();
-          if (rect.top <= 4 && rect.width > innerWidth * 0.6) continue;
-          node.style.setProperty("display", "none", "important");
-          count++;
-        }
-      }
-      return count;
-    }, [...HIDE_IF_FIXED, ...(target.hide ?? [])]);
+        return count;
+      },
+      [...HIDE_IF_FIXED, ...(target.hide ?? [])],
+    );
 
     // One frame for the hide to take effect in layout.
     await page.waitForTimeout(120);
@@ -214,7 +221,9 @@ async function capture(browser, target) {
 
     const kb = Math.round(buffer.length / 1024);
     const note = problems.length ? `  [${problems.join("; ")}]` : "";
-    console.log(`  ${target.slug.padEnd(24)} ok  ${kb} KB  hid ${hidden}${note}`);
+    console.log(
+      `  ${target.slug.padEnd(24)} ok  ${kb} KB  hid ${hidden}${note}`,
+    );
     return raw;
   } catch (error) {
     console.error(`  ${target.slug.padEnd(24)} FAILED  ${error.message}`);
@@ -243,7 +252,13 @@ console.log(
 );
 
 // The system Chrome, not a downloaded one.
-const browser = await chromium.launch({ channel: "chrome" });
+// CHROME_PATH points at a specific Chromium when there is no system Chrome
+// (a CI box, a container).
+const browser = await chromium.launch(
+  process.env.CHROME_PATH
+    ? { executablePath: process.env.CHROME_PATH }
+    : { channel: "chrome" },
+);
 const captured = [];
 try {
   for (const target of targets) {

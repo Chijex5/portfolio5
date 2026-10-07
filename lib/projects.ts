@@ -1,13 +1,13 @@
 import type { Project } from "@/lib/types";
 
 /**
- * The work. Order here is the order on the page and in the carousel, so lead with
+ * The work. Order here is the order of the proof chapter, so lead with
  * the strongest piece.
  *
  * Covers are screenshots of the live deployments, captured by
  * `node scripts/capture-covers.mjs` — re-run it after a project gets a redesign.
  * `jobless` is the exception: it has no frontend yet, so it keeps the generated
- * abstract plate from scripts/make-covers.py.
+ * abstract cover from scripts/make-covers.py.
  */
 export const projects: readonly Project[] = [
   {
@@ -16,12 +16,12 @@ export const projects: readonly Project[] = [
     title: "D'Footprint",
     category: "E-commerce",
     year: 2026,
+    line: "My sister's brand deserved a storefront she controls.",
     blurb:
       "Built for my sister's footwear brand after I got tired of seeing small businesses settle for storefronts they couldn't really control.",
     tags: ["Next.js", "Tailwind", "Paystack", "PostgreSQL"],
     cover: {
       src: "/images/work/dfootprint.webp",
-      plate: "/images/work/dfootprint-plate.webp",
       alt: "The D'Footprint storefront: a pair of handmade leather slides photographed close up, the wordmark drawn in outline across them.",
       width: 2400,
       height: 1650,
@@ -40,34 +40,34 @@ export const projects: readonly Project[] = [
     ],
   },
   {
-    slug: "jobless",
+    slug: "voltiq",
     index: "02",
-    title: "Jobless",
-    category: "Tooling",
+    title: "VoltIq",
+    category: "Civic tech",
     year: 2026,
+    line: "In Nsukka, nobody knows if it's just their house.",
     blurb:
-      "Job hunting is already frustrating. Looking across five different job boards every day makes it worse.",
-    tags: ["Python", "AI Validation", "Web Scraping", "MongoDB"],
+      "Nsukka residents report no light, low voltage and fluctuating supply on a shared live map. EEDC crews see where the faults are, and AI forecasts warn neighbourhoods before the power goes.",
+    tags: ["Next.js", "Live map", "AI forecasting", "PWA"],
     cover: {
-      src: "/images/work/jobless.webp",
-      plate: "/images/work/jobless-plate.webp",
-      alt: "A dot matrix thinning left to right, three dots picked out in vermilion.",
-      width: 1600,
-      height: 1100,
+      src: "/images/work/voltiq.webp",
+      alt: 'The VoltIq home page: a night map of Nsukka with every lit home glowing amber, under the headline "Know before the light goes."',
+      width: 2400,
+      height: 1650,
     },
-    repo: "https://github.com/chijex5/ai-scraper",
+    live: "https://volt-iq-chi.vercel.app",
     blocks: [
       {
         kind: "text",
-        body: "Jobless pulls listings from multiple sources, validates them with AI, and ranks them using a weighted scoring system so the best opportunities don't get buried under noise.",
+        body: "When the light goes in Nsukka, the first question is always the same: is it just my house? VoltIq answers it. One tap reports no light or low voltage, and every report lands on one live map of the town.",
       },
       {
         kind: "text",
-        body: "Instead of showing every listing equally, it tries to answer a simple question:",
+        body: "The same map is EEDC's dispatch console: faults ranked by the homes they affect, the nearest crew one tap away. Everyone who reported hears when the light is back, and a forecast warns the next street before it goes.",
       },
       {
         kind: "quote",
-        body: "Which jobs are actually worth my time?",
+        body: "Know before the light goes.",
       },
     ],
   },
@@ -77,11 +77,11 @@ export const projects: readonly Project[] = [
     title: "Wayframe",
     category: "AI tooling",
     year: 2026,
+    line: "I kept forgetting to design screens.",
     blurb: "This exists because I kept forgetting screens.",
     tags: ["Next.js", "TypeScript", "LLMs", "React Flow"],
     cover: {
       src: "/images/work/wayframe.webp",
-      plate: "/images/work/wayframe-plate.webp",
       alt: "Wayframe's dark canvas: \u201cDescribe the app. Get the screen flow.\u201d beside a column of metrics and an empty flow canvas.",
       width: 2400,
       height: 1650,
@@ -104,31 +104,34 @@ export const projects: readonly Project[] = [
     ],
   },
   {
-    slug: "blog",
+    slug: "jobless",
     index: "04",
-    title: "Blog",
-    category: "Publishing",
+    title: "Jobless",
+    category: "Tooling",
     year: 2026,
+    line: "Five job boards a day was four too many.",
     blurb:
-      "Most blogging platforms are built for teams. I wanted one built for me.",
-    tags: ["Next.js", "PostgreSQL", "TipTap", "Resend"],
+      "Job hunting is already frustrating. Looking across five different job boards every day makes it worse.",
+    tags: ["Python", "AI Validation", "Web Scraping", "MongoDB"],
     cover: {
-      src: "/images/work/blog.webp",
-      plate: "/images/work/blog-plate.webp",
-      alt: "The blog home: a serif headline reading \u201cThe real experience of learning tech as a student\u201d above a grid of article cards.",
-      width: 2400,
-      height: 1650,
+      src: "/images/work/jobless.webp",
+      alt: "A dot matrix thinning left to right, three dots picked out in vermilion.",
+      width: 1600,
+      height: 1100,
     },
-    live: "https://chijioke.app",
-    repo: "https://github.com/chijex5/my-blog",
+    repo: "https://github.com/chijex5/ai-scraper",
     blocks: [
       {
         kind: "text",
-        body: "This is a custom publishing platform with its own admin dashboard, rich-text editor, database, and email pipeline. Everything is designed around my writing process rather than trying to be a general-purpose CMS.",
+        body: "Jobless pulls listings from multiple sources, validates them with AI, and ranks them using a weighted scoring system so the best opportunities don't get buried under noise.",
+      },
+      {
+        kind: "text",
+        body: "Instead of showing every listing equally, it tries to answer a simple question:",
       },
       {
         kind: "quote",
-        body: "I use it because it fits how I work.",
+        body: "Which jobs are actually worth my time?",
       },
     ],
   },
@@ -138,12 +141,12 @@ export const projects: readonly Project[] = [
     title: "PicPress",
     category: "Utility",
     year: 2026,
+    line: "Twenty photos shouldn't make a 300MB PDF.",
     blurb:
       "A friend sends twenty iPhone photos. You turn them into a PDF. The PDF is somehow 300MB. That's the entire reason this project exists.",
     tags: ["React", "Next.js", "Client-side Processing", "PDF Generation"],
     cover: {
       src: "/images/work/picpress.webp",
-      plate: "/images/work/picpress-plate.webp",
       alt: "PicPress on warm paper: \u201cTwelve phone photos. A 248MB PDF.\u201d beside a before-and-after file-size readout.",
       width: 2400,
       height: 1650,
@@ -171,12 +174,12 @@ export const projects: readonly Project[] = [
     title: "Precious & Emmanuel",
     category: "Client project",
     year: 2026,
+    line: "A wedding, real guests, and a date that wouldn't move.",
     blurb:
       "A wedding website comes with something most side projects don't: an immovable deadline.",
     tags: ["Next.js", "PostgreSQL", "RSVP System", "Ticket Generation"],
     cover: {
       src: "/images/work/precious-and-emmanuel.webp",
-      plate: "/images/work/precious-and-emmanuel-plate.webp",
       alt: "Precious and Emmanuel's wedding site: the couple photographed under a floral arch, their names set over the picture in a high-contrast serif.",
       width: 2400,
       height: 1650,
