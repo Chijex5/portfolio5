@@ -1,8 +1,7 @@
 /**
  * Content types — see portfolio-build-plan.md §5.
  *
- * `cover` is optional: the work list falls back to a typographic plate when a
- * project has no image, so covers stay a data-only change.
+ * `cover` is optional: a case study without one simply has no screenshot.
  */
 
 export type CaseStudyBlock =
@@ -19,7 +18,7 @@ export type CaseStudyBlock =
 export interface Project {
   /** URL segment: /work/[slug] */
   slug: string;
-  /** Editorial index — "01".."06", drives the plate numeral. */
+  /** Editorial index — "01".."06". */
   index: string;
   title: string;
   /** "E-commerce", "AI tooling", … */
@@ -36,15 +35,9 @@ export interface Project {
   cover?: {
     /**
      * The master, 2400x1650 (16:11). Everything that goes through next/image
-     * reads this: the case-study cover, the OG card.
+     * reads this: the case-study screenshot and the OG card.
      */
     src: string;
-    /**
-     * The same picture at 1240x850. The particle stage samples this one: it only
-     * needs a few hundred pixels across, and decoding the master would cost a
-     * 2400px decode per project during the preloader.
-     */
-    plate?: string;
     alt: string;
     width: number;
     height: number;

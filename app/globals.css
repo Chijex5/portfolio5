@@ -150,20 +150,6 @@ body {
 }
 
 /* ------------------------------------------------------------------ *
- * Case-study cover — its rect must match coverRect() in lib/stage/layout.ts,
- * because the particles morph to exactly this box before the route changes.
- * ------------------------------------------------------------------ */
-.case-cover {
-  margin: 72px 16px 0;
-  aspect-ratio: 16 / 11;
-}
-@media (min-width: 768px) {
-  .case-cover {
-    margin: 96px 40px 0;
-  }
-}
-
-/* ------------------------------------------------------------------ *
  * Film grain. Static, so it composites once.
  * ------------------------------------------------------------------ */
 .grain {
@@ -196,16 +182,6 @@ html[data-js] .preloader {
    until the intro plays, and without JS there is no intro. Keeping it painted
    underneath is also what lets the browser count it as the page's largest
    paint at first render rather than when the preloader leaves. */
-
-/* ------------------------------------------------------------------ *
- * No WebGL: the DOM pictures the canvas would have drawn.
- * ------------------------------------------------------------------ */
-.gl-fallback {
-  display: none;
-}
-html[data-nogl] .gl-fallback {
-  display: block;
-}
 
 /* ------------------------------------------------------------------ *
  * Reduced motion: nothing moves that does not have to.

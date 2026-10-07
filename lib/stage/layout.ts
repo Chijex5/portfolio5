@@ -12,11 +12,6 @@ export function isMobile(w: number) {
   return w <= MOBILE_MAX;
 }
 
-/** Gutter the DOM uses at this width: 16px on phones, 40px above. */
-export function gutter(w: number) {
-  return isMobile(w) ? 16 : 40;
-}
-
 /**
  * The box structured shapes (schema, flow, surface) are drawn into, in stage
  * coordinates (centre origin, y up). Desktop puts it right of centre so chapter

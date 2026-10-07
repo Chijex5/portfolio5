@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import CaseCover from "@/components/case/CaseCover";
+import CaseScene from "@/components/case/CaseScene";
 import CaseMotion from "@/components/case/CaseMotion";
 import { CONTACT } from "@/lib/nav";
 import { getNextProject, getProject, projects } from "@/lib/projects";
@@ -135,7 +135,11 @@ export default async function CaseStudy({ params }: Params) {
 
   return (
     <main id="main" className="bg-ink relative z-10">
-      <CaseCover project={project} />
+      <CaseScene
+        slug={project.slug}
+        index={project.index}
+        label={project.category}
+      />
 
       <CaseMotion>
         <article className="px-4 pt-10 pb-24 md:px-10 md:pt-16 md:pb-36">
@@ -210,6 +214,34 @@ export default async function CaseStudy({ params }: Params) {
               <Block key={i} block={block} />
             ))}
           </div>
+
+          {/* The real thing, after the story of it. */}
+          {project.cover ? (
+            <figure data-rise className="mt-24 md:mt-36">
+              <figcaption className="label text-bone-muted mb-4 flex justify-between">
+                <span>The live site</span>
+                {project.live ? (
+                  <a
+                    href={project.live}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="hover:text-bone transition-colors"
+                  >
+                    Visit ↗
+                  </a>
+                ) : null}
+              </figcaption>
+              <div className="border-bone-faint relative aspect-[16/11] overflow-hidden rounded-[14px] border">
+                <Image
+                  src={project.cover.src}
+                  alt={project.cover.alt}
+                  fill
+                  sizes="(min-width: 768px) 92vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
+            </figure>
+          ) : null}
         </article>
 
         {/* Next project */}
