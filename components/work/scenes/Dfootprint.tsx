@@ -400,7 +400,7 @@ export default function DfootprintScene({ register }: SceneProps) {
           <span className="bg-ink-faint absolute top-[7px] left-[7px] h-[232px] w-[2px]" />
           <span
             data-fill
-            className="bg-jollof absolute top-[7px] left-[7px] h-[232px] w-[2px] origin-top"
+            className="bg-accent absolute top-[7px] left-[7px] h-[232px] w-[2px] origin-top"
           />
           <ol className="relative grid gap-[38px]">
             {copy.order.steps.map((s) => (
@@ -421,7 +421,7 @@ export default function DfootprintScene({ register }: SceneProps) {
         </div>
         <div
           data-delivered
-          className="bg-jollof text-paper absolute right-5 bottom-5 left-5 grid h-[40px] place-items-center rounded-[9px] text-[12px] font-medium"
+          className="bg-accent text-paper absolute right-5 bottom-5 left-5 grid h-[40px] place-items-center rounded-[9px] text-[12px] font-medium"
         >
           Delivered
         </div>
@@ -433,7 +433,7 @@ export default function DfootprintScene({ register }: SceneProps) {
         className="border-ink-faint absolute top-[12px] right-[10px] w-[300px] rounded-[16px] border bg-[#22201e]/95 p-3 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.9)] backdrop-blur"
       >
         <div className="flex items-center gap-2">
-          <span className="bg-jollof text-paper grid h-5 w-5 place-items-center rounded-[6px] text-[10px] font-semibold">
+          <span className="bg-accent text-paper grid h-5 w-5 place-items-center rounded-[6px] text-[10px] font-semibold">
             D
           </span>
           <span className="label text-ink-muted text-[9px]">

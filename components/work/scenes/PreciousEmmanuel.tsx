@@ -343,7 +343,7 @@ export default function PreciousEmmanuelScene({ register }: SceneProps) {
         <span className="bg-ink-faint mt-3 block h-[6px] overflow-hidden rounded-full">
           <span
             data-fill
-            className="bg-jollof block h-full w-full origin-left rounded-full"
+            className="bg-accent block h-full w-full origin-left rounded-full"
           />
         </span>
         <p className="label text-ink-muted mt-6 text-[9px]">Just in</p>

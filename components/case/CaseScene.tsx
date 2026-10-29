@@ -104,7 +104,7 @@ export default function CaseScene({
             <span className="bg-ink-faint block h-px overflow-hidden">
               <span
                 data-step-bar
-                className="bg-jollof block h-full w-full origin-left"
+                className="bg-accent block h-full w-full origin-left"
                 style={{ transform: "scaleX(0)" }}
               />
             </span>

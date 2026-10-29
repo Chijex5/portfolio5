@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * Tokens. Ink on rice-cream paper, one jollof red, plantain for the rare
- * second note — the same colours the particle stage prints with
- * (lib/stage/shapes.ts).
+ * Tokens. Ink on rice-cream paper by day, cream on charcoal by night, and
+ * one accent the visitor picks (lib/theme.ts). The particle stage reads
+ * --ink and --accent back from here, so keep them plain hex.
  * ------------------------------------------------------------------ */
 :root {
   --paper: #f3eadb;
@@ -11,27 +11,100 @@
   --ink: #1a120d;
   --ink-muted: color-mix(in oklab, var(--ink) 62%, transparent);
   --ink-faint: color-mix(in oklab, var(--ink) 16%, transparent);
-  --jollof: #b8321a;
-  --plantain: #e9a93b;
+  --accent: #b8321a;
+  /* The device the project scenes sit in. */
+  --screen: #0f0c0a;
+  --screen-edge: transparent;
 
   color-scheme: light;
 }
 
+:root[data-theme="dark"] {
+  --paper: #12100e;
+  --paper-raised: #1b1815;
+  --ink: #ede6da;
+  --ink-muted: color-mix(in oklab, var(--ink) 58%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 14%, transparent);
+  --screen: #0a0908;
+  --screen-edge: color-mix(in oklab, #ede6da 10%, transparent);
+
+  color-scheme: dark;
+}
+
+:root[data-accent="jollof"] {
+  --accent: #b8321a;
+}
+:root[data-theme="dark"][data-accent="jollof"] {
+  --accent: #ff5a36;
+}
+:root[data-accent="plantain"] {
+  --accent: #9a6106;
+}
+:root[data-theme="dark"][data-accent="plantain"] {
+  --accent: #f2b13c;
+}
+:root[data-accent="indigo"] {
+  --accent: #4338ca;
+}
+:root[data-theme="dark"][data-accent="indigo"] {
+  --accent: #a094ff;
+}
+:root[data-accent="forest"] {
+  --accent: #1d7048;
+}
+:root[data-theme="dark"][data-accent="forest"] {
+  --accent: #4cc98c;
+}
+:root[data-accent="mono"] {
+  --accent: #1a120d;
+}
+:root[data-theme="dark"][data-accent="mono"] {
+  --accent: #f3eadb;
+}
+
+/* Only while a switch is happening (lib/theme.ts adds and removes it). */
+:root.theme-anim,
+:root.theme-anim *,
+:root.theme-anim *::before,
+:root.theme-anim *::after {
+  transition:
+    background-color 0.5s ease,
+    border-color 0.5s ease,
+    color 0.5s ease,
+    fill 0.5s ease !important;
+}
+
 /* A screen set into the page: the project scenes are product UI, and product
-   UI lives on a dark device. Inside, the tokens flip back to light-on-dark, so
+   UI lives on a dark device. Inside, the tokens flip to light-on-dark, so
    scene code reads `text-ink` and gets the screen's ink. Every token that is
    derived from another is redeclared, because custom properties inherit as
-   already-resolved values. */
+   already-resolved values. The accent keeps the visitor's pick. */
 .screen {
-  --paper: #0f0c0a;
+  --paper: var(--screen);
   --paper-raised: #1a1613;
   --ink: #ede8df;
   --ink-muted: color-mix(in oklab, var(--ink) 56%, transparent);
   --ink-faint: color-mix(in oklab, var(--ink) 16%, transparent);
-  --jollof: #ff4a1c;
 
   color: var(--ink);
   color-scheme: dark;
+  box-shadow: inset 0 0 0 1px var(--screen-edge);
+}
+/* Screens are always dark, so they take each accent's dark-mode value. */
+:root[data-accent="jollof"] .screen {
+  --accent: #ff5a36;
+}
+:root[data-accent="plantain"] .screen {
+  --accent: #f2b13c;
+}
+:root[data-accent="indigo"] .screen {
+  --accent: #a094ff;
+}
+:root[data-accent="forest"] .screen {
+  --accent: #4cc98c;
+}
+:root[data-accent="mono"] .screen {
+  --accent: #f3eadb;
 }
 
 @theme inline {
@@ -40,8 +113,7 @@
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-ink-faint: var(--ink-faint);
-  --color-jollof: var(--jollof);
-  --color-plantain: var(--plantain);
+  --color-accent: var(--accent);
 
   --font-display: var(--font-display-family), system-ui, sans-serif;
   --font-serif: var(--font-serif-family), Georgia, serif;
@@ -90,12 +162,12 @@ body {
 }
 
 ::selection {
-  background: var(--jollof);
+  background: var(--accent);
   color: var(--paper);
 }
 
 :focus-visible {
-  outline: 1px solid var(--jollof);
+  outline: 1px solid var(--accent);
   outline-offset: 4px;
 }
 
@@ -122,15 +194,37 @@ body {
 }
 
 /* The one word per chapter that carries the turn: the same face, let out wide
-   and slanted, in jollof. */
+   and slanted, in accent. */
 .turn {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 700;
   font-stretch: 128%;
   letter-spacing: -0.03em;
-  color: var(--jollof);
+  color: var(--accent);
   padding-right: 0.06em;
+}
+
+/* An echo of a heading: just its outline. */
+.outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--ink-faint);
+}
+
+/* A strip that scrolls sideways forever: two copies of the same run, moved by
+   exactly one copy's width. */
+.marquee-track {
+  animation: marquee 32s linear infinite;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
 }
 
 .label {
@@ -179,6 +273,10 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
   opacity: 0.16;
   mix-blend-mode: multiply;
+}
+:root[data-theme="dark"] .grain {
+  opacity: 0.07;
+  mix-blend-mode: screen;
 }
 
 /* ------------------------------------------------------------------ *

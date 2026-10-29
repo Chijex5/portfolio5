@@ -177,7 +177,7 @@ export default function Preloader() {
           <span className="bg-ink-faint mt-3 block h-px w-full overflow-hidden">
             <span
               ref={bar}
-              className="bg-jollof block h-full w-full origin-left scale-x-0"
+              className="bg-accent block h-full w-full origin-left scale-x-0"
             />
           </span>
         </div>

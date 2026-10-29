@@ -10,8 +10,11 @@ import { anchorBox, isMobile } from "./layout";
  *                              `flow` < 0: plain particle. `flow` ≥ 0: the
  *                              particle sits on a path; the integer part is the
  *                              path id, the fraction how far along it is. The
- *                              shader runs a vermilion pulse down those paths.
- *   col  N × (r, g, b, a)      0–255.
+ *                              shader runs an accent pulse down those paths.
+ *   col  N × (role, -, -, a)   0–255. `role` says which theme colour the dot
+ *                              is inked in — 0 ink, 255 accent — and the
+ *                              shader paints it from the current theme, so
+ *                              switching theme or accent never rebuilds a shape.
  *
  * Shapes are rebuilt on resize (they are laid out in CSS px), so everything here
  * is seeded: the same viewport always produces the same picture.
@@ -32,11 +35,10 @@ export type ShapeData = {
 
 type RGBA = readonly [number, number, number, number];
 
-// Printed on paper: ink, jollof, plantain, and the browns in between. Alpha is
-// how heavily a dot is inked, not how brightly it glows.
-export const INK: RGBA = [26, 18, 13, 235];
-export const JOLLOF: RGBA = [184, 50, 26, 245];
-const DUST: RGBA = [26, 18, 13, 30];
+// Roles, not colours: see `col` above. Alpha is how heavily a dot is inked.
+export const INK: RGBA = [0, 0, 0, 235];
+export const ACCENT: RGBA = [255, 0, 0, 245];
+const DUST: RGBA = [0, 0, 0, 30];
 
 /** mulberry32 — small, fast, good enough to scatter dots. */
 export function rng(seed: number) {
@@ -204,7 +206,7 @@ function inkType(
 
 /**
  * Hero — "CJ." set huge in the display face and pressed into a slab of
- * particles, so it shows its thickness as it turns. The period is jollof.
+ * particles, so it shows its thickness as it turns. The period is accent.
  */
 export function cj(n: number, w: number, h: number, family: string): ShapeData {
   const r = rng(11);
@@ -234,7 +236,7 @@ export function cj(n: number, w: number, h: number, family: string): ShapeData {
     ch,
     n * 0.55,
   );
-  inkType(s, n, pts, [INK, JOLLOF], step, r, w, h, size * 0.14);
+  inkType(s, n, pts, [INK, ACCENT], step, r, w, h, size * 0.14);
   const box = anchorBox(w, h);
   return {
     ...s,
@@ -260,7 +262,7 @@ export function field(n: number, w: number, h: number): ShapeData {
       (r() - 0.5) * w * 1.3,
       (r() - 0.5) * h * 1.3,
       (r() - 0.5) * 700,
-      i < shown ? (r() < 0.04 ? [184, 50, 26, 70] : DUST) : [0, 0, 0, 0],
+      i < shown ? (r() < 0.04 ? [255, 0, 0, 70] : DUST) : [0, 0, 0, 0],
     );
   }
   return { ...s, center: [0, 0, 0], size: 1.6, mode: 2, pulse: 0 };
@@ -268,7 +270,7 @@ export function field(n: number, w: number, h: number): ShapeData {
 
 /**
  * The end — "Say hello." set in the display face and sampled into dots, the
- * period in jollof. Leftovers drift as dust around it.
+ * period in accent. Leftovers drift as dust around it.
  */
 export function hello(
   n: number,
@@ -280,7 +282,7 @@ export function hello(
   const s = alloc(n);
   const mobile = isMobile(w);
   const lines = mobile ? ["Say", "hello"] : ["Say hello"];
-  const size = mobile ? w * 0.3 : Math.min(w * 0.2, h * 0.36);
+  const size = mobile ? w * 0.3 : Math.min(w * 0.15, h * 0.3);
   const font = `900 ${size}px ${family}`;
   const cw = w;
   const ch = size * lines.length * 0.95 + size * 0.4;
@@ -305,7 +307,7 @@ export function hello(
   const { pts, step } = typeset(runs, cw, ch, n * 0.82);
   const offY = mobile ? h * 0.08 : h * 0.1;
   pts.forEach((p) => (p.y += offY));
-  inkType(s, n, pts, [INK, JOLLOF], step, r, w, h);
+  inkType(s, n, pts, [INK, ACCENT], step, r, w, h);
   return {
     ...s,
     center: [0, 0, 0],
@@ -320,7 +322,7 @@ export function seed(n: number): ShapeData {
   const r = rng(3);
   const s = alloc(n);
   for (let i = 0; i < n; i++) {
-    put(s, i, (r() - 0.5) * 4, (r() - 0.5) * 4, 0, [26, 18, 13, 0]);
+    put(s, i, (r() - 0.5) * 4, (r() - 0.5) * 4, 0, [0, 0, 0, 0]);
   }
   return { ...s, center: [0, 0, 0], size: 1, mode: 0, pulse: 0 };
 }

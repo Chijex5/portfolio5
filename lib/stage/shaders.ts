@@ -64,6 +64,8 @@ uniform float uTurb;
 uniform float uDpr;
 uniform float uCamZ;
 uniform float uMotion;   // 0 under reduced motion: no drift, swirl or cursor
+uniform vec3 uInk;      // theme colours, 0–1
+uniform vec3 uAccent;
 uniform vec2 uMouse;     // stage px
 uniform float uMouseR;   // radius of the push, px
 uniform float uMouseF;   // 0–1, rises while the pointer moves
@@ -166,7 +168,8 @@ void main(){
   gl_PointSize = size * uDpr * (uCamZ / -mv.z);
 
   vec4 col = mix(ca, cb, e);
-  col.rgb = mix(col.rgb, vec3(0.72, 0.196, 0.102), glow);
+  // Red carries the role: 0 ink, 1 accent (see shapes.ts).
+  col.rgb = mix(mix(uInk, uAccent, col.r), uAccent, glow);
   col.a = max(col.a, glow) * ie;
   col.a *= 1.0 + push * 0.6;
   vCol = col;

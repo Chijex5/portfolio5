@@ -218,7 +218,7 @@ export default function JoblessScene({ register }: SceneProps) {
         <span
           key={s}
           data-packet
-          className="bg-jollof absolute h-[5px] w-[5px] rounded-full"
+          className="bg-accent absolute h-[5px] w-[5px] rounded-full"
           style={{ left: 116, top: 107 + i * 56 }}
         />
       ))}
@@ -294,7 +294,7 @@ export default function JoblessScene({ register }: SceneProps) {
           data-why
           className="text-ink-muted absolute right-4 bottom-4 left-4 text-[11px]"
         >
-          <span className="text-jollof">●</span> Top match: React, remote, pay
+          <span className="text-accent">●</span> Top match: React, remote, pay
           in range
         </p>
       </Panel>
@@ -350,7 +350,7 @@ export default function JoblessScene({ register }: SceneProps) {
           <p className="text-ink-muted mt-0.5 text-[9px]">{best.company}</p>
           <span
             data-offer-badge
-            className="bg-jollof text-paper absolute -top-2 -right-2 rounded-full px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.08em] uppercase"
+            className="bg-accent text-paper absolute -top-2 -right-2 rounded-full px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.08em] uppercase"
           >
             Offer
           </span>

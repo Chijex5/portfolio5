@@ -76,9 +76,9 @@ function Block({ block }: { block: CaseStudyBlock }) {
         data-split
         className="display mt-20 max-w-[18ch] text-[clamp(2rem,4.6vw,4.5rem)] md:mt-28"
       >
-        <span className="text-jollof">“</span>
+        <span className="text-accent">“</span>
         {block.body}
-        <span className="text-jollof">”</span>
+        <span className="text-accent">”</span>
       </p>
     );
   }
@@ -111,7 +111,7 @@ function Outbound({
       href={href}
       target="_blank"
       rel="noreferrer noopener"
-      className="group hover:text-jollof inline-flex items-center gap-2 transition-colors"
+      className="group hover:text-accent inline-flex items-center gap-2 transition-colors"
     >
       {label}
       <span className="sr-only"> for {title}</span>
@@ -147,7 +147,7 @@ export default async function CaseStudy({ params }: Params) {
             data-rise
             className="label text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1"
           >
-            <span className="text-jollof">
+            <span className="text-accent">
               ({project.index}/{total})
             </span>
             <span className="bg-ink-faint h-px w-8" />
@@ -262,7 +262,7 @@ export default async function CaseStudy({ params }: Params) {
           >
             <span
               data-split
-              className="display group-hover:text-jollof block text-[clamp(3rem,10vw,11rem)] transition-colors duration-500"
+              className="display group-hover:text-accent block text-[clamp(3rem,10vw,11rem)] transition-colors duration-500"
             >
               {next.title}
             </span>

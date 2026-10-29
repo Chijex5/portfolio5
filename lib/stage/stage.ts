@@ -1,4 +1,5 @@
 import { gsap } from "@/lib/gsap";
+import { theme } from "@/lib/theme";
 import { isMobile } from "./layout";
 import { fill, program, texture, upload, type Uniforms } from "./gl";
 import { fragmentShader, vertexShader } from "./shaders";
@@ -62,6 +63,8 @@ class Stage {
     uDpr: { type: "f", value: 1 },
     uCamZ: { type: "f", value: 1 },
     uMotion: { type: "f", value: 1 },
+    uInk: { type: "v3", value: [0.1, 0.07, 0.05] },
+    uAccent: { type: "v3", value: [0.72, 0.2, 0.1] },
     uMouse: { type: "v2", value: [99999, 99999] },
     uMouseR: { type: "f", value: 130 },
     uMouseF: { type: "f", value: 0 },
@@ -169,6 +172,8 @@ class Stage {
     this.u.uTexW.value = this.tw;
 
     this.size();
+    this.paint();
+    theme.subscribe(this.paint);
     this.report(0.1);
 
     // The face "CJ." and "Say hello." are set in. next/font hashes the family
@@ -253,6 +258,34 @@ class Stage {
   private build() {
     this.steps().forEach((step) => step());
   }
+
+  /**
+   * Take ink and accent from the theme tokens. The shapes only store which
+   * of the two each dot is (see shapes.ts), so this is the whole repaint.
+   */
+  private paint = () => {
+    const css = getComputedStyle(document.documentElement);
+    const to = this.u;
+    const ink = rgb(css.getPropertyValue("--ink"));
+    const accent = rgb(css.getPropertyValue("--accent"));
+    if (!ink || !accent) return;
+    // Ease over with the page's own colour transition.
+    const from = {
+      i: [...(to.uInk.value as number[])],
+      a: [...(to.uAccent.value as number[])],
+    };
+    const t = { k: 0 };
+    gsap.to(t, {
+      k: 1,
+      duration: this.ready ? 0.5 : 0,
+      ease: "power1.out",
+      overwrite: true,
+      onUpdate: () => {
+        to.uInk.value = mix3(from.i, ink, t.k);
+        to.uAccent.value = mix3(from.a, accent, t.k);
+      },
+    });
+  };
 
   /** Push the current from/to/mix into the uniforms. */
   private apply() {
@@ -435,6 +468,22 @@ class Stage {
     this.mouse.last = 0;
     this.mouse.tx = this.mouse.ty = this.mouse.x = this.mouse.y = -99999;
   };
+}
+
+/** "#rrggbb" → [r, g, b] in 0–1; null for anything else. */
+function rgb(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const v = parseInt(m[1], 16);
+  return [(v >> 16) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+}
+
+function mix3(a: number[], b: number[], k: number): [number, number, number] {
+  return [
+    a[0] + (b[0] - a[0]) * k,
+    a[1] + (b[1] - a[1]) * k,
+    a[2] + (b[2] - a[2]) * k,
+  ];
 }
 
 /** Hand the main thread back between chunks of work. */

@@ -245,12 +245,12 @@ export default function WayframeScene({ register }: SceneProps) {
             </span>
             <span
               data-caret
-              className="bg-jollof ml-0.5 inline-block h-[16px] w-[2px]"
+              className="bg-accent ml-0.5 inline-block h-[16px] w-[2px]"
             />
           </p>
           <p
             data-check
-            className="text-jollof absolute inset-0 flex items-center text-[14px] font-medium"
+            className="text-accent absolute inset-0 flex items-center text-[14px] font-medium"
           >
             Checked against {copy.compared} similar apps · {copy.missing.length}{" "}
             screens missing
@@ -314,7 +314,7 @@ export default function WayframeScene({ register }: SceneProps) {
       {/* The pattern check's sweep */}
       <span
         data-scan
-        className="bg-jollof pointer-events-none absolute top-[100px] left-[20px] h-[340px] w-[2px] shadow-[0_0_24px_6px_rgba(255,74,28,0.45)]"
+        className="bg-accent pointer-events-none absolute top-[100px] left-[20px] h-[340px] w-[2px] shadow-[0_0_24px_6px_rgba(255,74,28,0.45)]"
       />
 
       <Pointer />

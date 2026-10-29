@@ -31,6 +31,6 @@ export const CONTACT = {
   timeZone: "Africa/Lagos",
   available: true,
   /** The line over the email: where CJ is, and what he is open to. */
-  status: "Signed out of UNN, 2026. Hiring, or building something? Both work.",
+  status: "Hiring, or building something? Both work.",
   writing: "https://chijioke.app",
 } as const;

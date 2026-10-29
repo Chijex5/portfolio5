@@ -5,6 +5,7 @@ import { useSyncExternalStore } from "react";
 import LocalTime from "@/components/shared/LocalTime";
 import { chapter } from "@/lib/chapter";
 import { CONTACT, NAV_LINKS } from "@/lib/nav";
+import ThemeControls from "./ThemeControls";
 
 /**
  * The four corners. Wordmark and nav up top; the running chapter and Lagos time
@@ -20,31 +21,34 @@ export default function Hud() {
 
   return (
     <>
-      <header className="text-ink from-paper via-paper/85 pointer-events-none fixed inset-x-0 top-0 z-40 flex items-start justify-between bg-gradient-to-b to-transparent p-4 md:p-10">
+      <header className="text-ink from-paper via-paper/85 pointer-events-none fixed inset-x-0 top-0 z-40 flex items-center justify-between bg-gradient-to-b to-transparent p-4 md:p-10">
         <Link
           href="/"
           data-cursor="Home"
           className="pointer-events-auto text-[0.95rem] font-medium tracking-[-0.02em]"
         >
-          Chijioke<span className="text-jollof">.</span>
+          Chijioke<span className="text-accent">.</span>
         </Link>
 
-        <p className="label text-ink-muted hidden pt-[0.35em] md:block">
+        <p className="label text-ink-muted hidden lg:block">
           {CONTACT.role} — {CONTACT.location}
         </p>
 
-        <nav aria-label="Primary" className="pointer-events-auto">
-          <ul className="flex gap-5 text-[0.95rem] tracking-[-0.01em] md:gap-8">
-            {NAV_LINKS.map((l) => (
-              <li key={l.href}>
-                <Link href={l.href} className="group relative inline-block">
-                  {l.label}
-                  <span className="bg-ink absolute -bottom-0.5 left-0 h-px w-full origin-right scale-x-0 transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:origin-left group-hover:scale-x-100" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div className="pointer-events-auto flex items-center gap-4 md:gap-8">
+          <nav aria-label="Primary">
+            <ul className="flex gap-4 text-[0.9rem] tracking-[-0.01em] md:gap-8 md:text-[0.95rem]">
+              {NAV_LINKS.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="group relative inline-block">
+                    {l.label}
+                    <span className="bg-ink absolute -bottom-0.5 left-0 h-px w-full origin-right scale-x-0 transition-transform duration-500 ease-[var(--ease-out-expo)] group-hover:origin-left group-hover:scale-x-100" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <ThemeControls />
+        </div>
       </header>
 
       <div

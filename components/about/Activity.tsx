@@ -3,17 +3,17 @@ import type { Activity as Data } from "@/lib/github";
 
 const SHADES = [
   "bg-ink-faint opacity-60",
-  "bg-jollof/30",
-  "bg-jollof/55",
-  "bg-jollof/80",
-  "bg-jollof",
+  "bg-accent/30",
+  "bg-accent/55",
+  "bg-accent/80",
+  "bg-accent",
 ] as const;
 
 const MONTHS = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ");
 
 /**
  * A year of commits as a grid of squares — one column per week, Sunday at the
- * top — inked in jollof by how busy the day was.
+ * top — inked in accent by how busy the day was.
  */
 export default function Activity({ data }: { data: Data }) {
   // Pad the first week so every column starts on a Sunday.
@@ -86,7 +86,7 @@ export default function Activity({ data }: { data: Data }) {
           href={github.href}
           target="_blank"
           rel="noreferrer noopener"
-          className="label text-ink-muted hover:text-jollof mt-4 inline-block transition-colors"
+          className="label text-ink-muted hover:text-accent mt-4 inline-block transition-colors"
         >
           github.com/chijex5 ↗
         </a>

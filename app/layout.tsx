@@ -5,6 +5,7 @@ import Cursor from "@/components/shell/Cursor";
 import Hud from "@/components/shell/Hud";
 import Preloader from "@/components/shell/Preloader";
 import StageCanvas from "@/components/shell/StageCanvas";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
 // The display face: one variable family whose width axis does the work — set
@@ -78,8 +79,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f3eadb",
-  colorScheme: "light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3eadb" },
+    { media: "(prefers-color-scheme: dark)", color: "#12100e" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -94,17 +98,18 @@ export default function RootLayout({
       <head>
         {/* Before first paint: mark the document as scripted, which is what lets
             the preloader and the hero's pre-intro state exist at all (see
-            globals.css). Visitors without JS get the finished page. */}
+            globals.css), and apply the visitor's saved theme so it never
+            flashes. Visitors without JS get the finished page, in light. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.setAttribute("data-js","");try{history.scrollRestoration="manual"}catch(e){}`,
+            __html: `document.documentElement.setAttribute("data-js","");try{history.scrollRestoration="manual"}catch(e){}${THEME_SCRIPT}`,
           }}
         />
       </head>
       <body className="min-h-dvh">
         <a
           href="#main"
-          className="label bg-jollof text-paper fixed top-2 left-2 z-[110] -translate-y-24 px-3 py-2 focus:translate-y-0"
+          className="label bg-accent text-paper fixed top-2 left-2 z-[110] -translate-y-24 px-3 py-2 focus:translate-y-0"
         >
           Skip to content
         </a>

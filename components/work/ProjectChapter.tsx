@@ -96,6 +96,7 @@ export default function ProjectChapter({
   return (
     <section
       ref={root}
+      id={`work-${project.slug}`}
       aria-labelledby={`project-${project.slug}`}
       className="relative"
       style={{ height: `${chapterVh(steps.length) * 100}svh` }}
@@ -110,7 +111,7 @@ export default function ProjectChapter({
 
         <div className="row-start-2 flex flex-col justify-end md:col-span-5 md:col-start-1 md:row-start-1">
           <p className="label mb-4 flex items-center md:mb-6">
-            <span className="text-jollof">(01)</span>
+            <span className="text-accent">(01)</span>
             <span className="bg-ink-faint mx-3 h-px w-8" />
             <span className="text-ink-muted">
               {String(index + 1).padStart(2, "0")} /{" "}

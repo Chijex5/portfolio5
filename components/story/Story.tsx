@@ -9,6 +9,7 @@ import { CONTACT, SOCIAL_LINKS } from "@/lib/nav";
 import { projects } from "@/lib/projects";
 import { getLenis, lockScroll, recallStory, rememberStory } from "@/lib/scroll";
 import { stage, type ShapeId } from "@/lib/stage/stage";
+import SectionTitle from "@/components/story/SectionTitle";
 import ProjectChapter from "@/components/work/ProjectChapter";
 import { SCENES } from "@/components/work/scenes";
 
@@ -55,6 +56,13 @@ const NOW = [
   { label: "Learning", value: "Risevest Academy" },
   { label: "Studied", value: "Statistics, University of Nigeria" },
   { label: "Based", value: "Lagos · remote" },
+] as const;
+
+const MARQUEE = [
+  "Got something worth building?",
+  "Let's talk",
+  "Got something worth building?",
+  "Let's talk",
 ] as const;
 
 const STACK = [
@@ -250,6 +258,27 @@ export default function Story({
         });
       });
 
+      // Section titles: the outlined echoes fan out below the word as it
+      // comes up the screen, and fold back if you scroll back.
+      gsap.utils.toArray<HTMLElement>("[data-echo]", el).forEach((echo) => {
+        const k = Number(echo.dataset.echo);
+        gsap.fromTo(
+          echo,
+          { yPercent: 0, autoAlpha: 0 },
+          {
+            yPercent: k * 26,
+            autoAlpha: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: echo.closest("[data-title]")!,
+              start: "top 85%",
+              end: "top 35%",
+              scrub: 0.6,
+            },
+          },
+        );
+      });
+
       // About is a normal page: each block fades up as it reaches the screen.
       gsap.utils.toArray<HTMLElement>("[data-rise]", el).forEach((t) => {
         gsap.from(t, {
@@ -311,12 +340,12 @@ export default function Story({
             className="label text-ink-muted mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 md:mb-8"
           >
             <span>
-              {CONTACT.name} <span className="text-jollof">/</span>{" "}
+              {CONTACT.name} <span className="text-accent">/</span>{" "}
               {CONTACT.role}
             </span>
             {CONTACT.available && (
-              <span className="border-jollof text-jollof inline-flex -rotate-3 items-center gap-2 border px-2 py-1">
-                <span className="bg-jollof h-1.5 w-1.5 animate-pulse rounded-full" />
+              <span className="border-accent text-accent inline-flex -rotate-3 items-center gap-2 border px-2 py-1">
+                <span className="bg-accent h-1.5 w-1.5 animate-pulse rounded-full" />
                 Open to work · Freelance
               </span>
             )}
@@ -335,7 +364,7 @@ export default function Story({
           >
             <a
               href="#work"
-              className="bg-ink text-paper hover:bg-jollof rounded-full px-5 py-3 text-[0.95rem] tracking-[-0.01em] transition-colors"
+              className="bg-ink text-paper hover:bg-accent rounded-full px-5 py-3 text-[0.95rem] tracking-[-0.01em] transition-colors"
             >
               See the work
             </a>
@@ -354,14 +383,54 @@ export default function Story({
         >
           Scroll for the work
           <span className="bg-ink-faint relative block h-8 w-px overflow-hidden">
-            <span className="bg-jollof absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
+            <span className="bg-accent absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
           </span>
         </p>
       </section>
 
       {/* 01 — Work: each project acts itself out ------------------------- */}
-      <section id="work" className="relative">
-        <h2 className="sr-only">Selected work</h2>
+      <section id="work" aria-labelledby="work-title" className="relative">
+        <div className="grid gap-y-10 px-4 pt-32 pb-16 md:grid-cols-12 md:gap-x-10 md:px-10 md:pt-48 md:pb-24">
+          <div className="md:col-span-5">
+            <SectionTitle
+              id="work-title"
+              word="Work"
+              index="01"
+              label={`Selected work (${String(projects.length).padStart(2, "0")})`}
+            />
+            <p
+              data-rise
+              className="text-ink-muted mt-6 max-w-[34ch] text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em] md:mt-10"
+            >
+              Products I took from idea to shipped. Each one plays out below as
+              you scroll — or jump straight to one.
+            </p>
+          </div>
+          <ol className="border-ink-faint self-end border-t md:col-span-7 md:col-start-6">
+            {projects.map((p) => (
+              <li key={p.slug} data-rise className="border-ink-faint border-b">
+                <a
+                  href={`#work-${p.slug}`}
+                  className="group grid grid-cols-[2.5rem_1fr_auto] items-baseline gap-x-4 py-4 md:grid-cols-[3rem_1fr_10rem_2rem] md:py-5"
+                >
+                  <span className="label text-ink-muted">{p.index}</span>
+                  <span className="group-hover:text-accent text-[clamp(1.35rem,2.4vw,2.25rem)] font-medium tracking-[-0.03em] transition-[color,translate] duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-2">
+                    {p.title}
+                  </span>
+                  <span className="label text-ink-muted hidden md:block">
+                    {p.category} · {p.year}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="text-ink-muted group-hover:text-accent justify-self-end transition-[color,rotate] duration-500 group-hover:-rotate-45"
+                  >
+                    →
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
         {projects.map((p, i) => {
           const scene = SCENES[p.slug];
           if (!scene) return null;
@@ -381,16 +450,26 @@ export default function Story({
       {/* 02 — About ------------------------------------------------------- */}
       <section
         id="about"
+        aria-labelledby="about-title"
         className="relative px-4 pt-32 pb-24 md:px-10 md:pt-48 md:pb-40"
       >
-        <Eyebrow index="02" label="About" />
-        <h2
-          data-reveal
-          className="display max-w-[18ch] text-[clamp(2.6rem,5.6vw,6.5rem)]"
-        >
-          I like owning the whole picture — schema, API, and the{" "}
-          <em className="turn">interface.</em>
-        </h2>
+        <div className="grid gap-y-6 md:grid-cols-12 md:items-end md:gap-x-10">
+          <div className="md:col-span-5">
+            <SectionTitle
+              id="about-title"
+              word="About"
+              index="02"
+              label="Who"
+            />
+          </div>
+          <p
+            data-reveal
+            className="display max-w-[18ch] pb-[0.5em] text-[clamp(2.2rem,4.2vw,4.75rem)] md:col-span-7 md:col-start-6"
+          >
+            I like owning the whole picture — schema, API, and the{" "}
+            <em className="turn">interface.</em>
+          </p>
+        </div>
         <div className="mt-14 grid gap-x-10 gap-y-14 md:mt-20 md:grid-cols-12">
           <div
             data-rise
@@ -422,22 +501,25 @@ export default function Story({
         </div>
 
         <div className="mt-20 md:mt-28">
-          <p data-rise className="label text-ink-muted mb-6">
-            Stack
-          </p>
-          <ul
-            data-rise
-            className="border-ink-faint grid border-t md:grid-cols-4"
-          >
+          <SectionTitle word="Stack" />
+          <ul className="border-ink-faint mt-6 grid grid-cols-2 border-t md:mt-10 md:grid-cols-4">
             {STACK.map((g) => (
               <li
                 key={g.group}
-                className="border-ink-faint border-b py-5 md:border-r md:px-5 md:first:pl-0 md:last:border-r-0"
+                data-rise
+                className="border-ink-faint hover:bg-paper-raised border-b py-6 transition-colors duration-500 max-md:odd:border-r max-md:odd:pr-4 max-md:even:pl-4 md:border-r md:px-6 md:py-8 md:last:border-r-0"
               >
-                <p className="label text-jollof">{g.group}</p>
-                <p className="mt-3 text-[1.05rem] leading-snug tracking-[-0.01em]">
-                  {g.items.join(" · ")}
-                </p>
+                <p className="label text-accent">{g.group}</p>
+                <ul className="mt-4 space-y-1.5">
+                  {g.items.map((item) => (
+                    <li
+                      key={item}
+                      className="text-[clamp(1.15rem,1.6vw,1.5rem)] tracking-[-0.02em]"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </li>
             ))}
           </ul>
@@ -449,6 +531,41 @@ export default function Story({
           </div>
         )}
       </section>
+
+      {/* The ask, scrolling ------------------------------------------------ */}
+      <a
+        href={`mailto:${CONTACT.email}`}
+        data-cursor="Write"
+        aria-label={`Email ${CONTACT.email}`}
+        className="border-ink-faint group relative block overflow-hidden border-y py-6 md:py-8"
+      >
+        <span className="marquee-track flex w-max">
+          {[0, 1].map((copy) => (
+            <span
+              key={copy}
+              aria-hidden="true"
+              className="display flex shrink-0 items-center text-[clamp(3rem,8vw,7.5rem)] whitespace-nowrap"
+            >
+              {MARQUEE.map((t, i) => (
+                <span key={i} className="flex items-center">
+                  <span
+                    className={
+                      i % 2
+                        ? "outline-text group-hover:text-accent transition-colors duration-500"
+                        : "group-hover:text-accent transition-colors duration-500"
+                    }
+                  >
+                    {t}
+                  </span>
+                  <span className="text-accent mx-[0.35em] text-[0.5em]">
+                    ✦
+                  </span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </span>
+      </a>
 
       {/* 03 — Hello --------------------------------------------------------- */}
       <section
@@ -469,7 +586,7 @@ export default function Story({
               className="group relative text-[clamp(1.35rem,3.4vw,3.25rem)] tracking-[-0.03em]"
             >
               {CONTACT.email}
-              <span className="bg-jollof absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-x-100" />
+              <span className="bg-accent absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-x-100" />
             </a>
             <ul
               data-fade
@@ -481,7 +598,7 @@ export default function Story({
                     href={s.href}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="hover:text-jollof transition-colors"
+                    className="hover:text-accent transition-colors"
                   >
                     {s.label} ↗
                   </a>
@@ -492,37 +609,26 @@ export default function Story({
                   href={CONTACT.writing}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="hover:text-jollof transition-colors"
+                  className="hover:text-accent transition-colors"
                 >
                   Writing ↗
                 </a>
               </li>
             </ul>
           </div>
-          <p className="label text-ink-muted mt-14 hidden justify-center md:flex">
-            © {new Date().getFullYear()} {CONTACT.name}
-          </p>
+          <footer className="label text-ink-muted mt-14 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+            <span>
+              © {new Date().getFullYear()} {CONTACT.name}
+            </span>
+            <span className="hidden md:inline">
+              Built with Next.js, GSAP &amp; WebGL
+            </span>
+            <a href="#top" className="hover:text-accent transition-colors">
+              Back to top ↑
+            </a>
+          </footer>
         </div>
       </section>
     </div>
-  );
-}
-
-function Eyebrow({
-  index,
-  label,
-  children,
-}: {
-  index: string;
-  label: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <p data-fade className="label mb-5 flex items-center md:mb-7">
-      <span className="text-jollof">({index})</span>
-      <span className="bg-ink-faint mx-3 h-px w-8" />
-      <span className="text-ink-muted">{label}</span>
-      {children}
-    </p>
   );
 }
