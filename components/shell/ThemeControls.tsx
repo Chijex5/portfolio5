@@ -45,7 +45,10 @@ export default function ThemeControls() {
     <div ref={box} className="relative flex items-center gap-1.5">
       <button
         type="button"
-        onClick={() => theme.set({ mode: dark ? "light" : "dark" })}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          theme.toggleFrom(r.left + r.width / 2, r.top + r.height / 2);
+        }}
         aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
         data-cursor={dark ? "Light" : "Dark"}
         className="border-ink-faint hover:border-ink grid h-8 w-8 place-items-center rounded-full border transition-colors"

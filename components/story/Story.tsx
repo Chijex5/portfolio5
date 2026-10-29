@@ -9,8 +9,10 @@ import { CONTACT, SOCIAL_LINKS } from "@/lib/nav";
 import { projects } from "@/lib/projects";
 import { getLenis, lockScroll, recallStory, rememberStory } from "@/lib/scroll";
 import { stage, type ShapeId } from "@/lib/stage/stage";
+import EmailLink from "@/components/shared/EmailLink";
 import SectionTitle from "@/components/story/SectionTitle";
 import ProjectChapter from "@/components/work/ProjectChapter";
+import WorkIndex from "@/components/work/WorkIndex";
 import { SCENES } from "@/components/work/scenes";
 
 /**
@@ -60,9 +62,9 @@ const NOW = [
 
 const MARQUEE = [
   "Got something worth building?",
-  "Let's talk",
+  "I'm listening",
   "Got something worth building?",
-  "Let's talk",
+  "I'm listening",
 ] as const;
 
 const STACK = [
@@ -177,6 +179,17 @@ export default function Story({
         return;
       }
 
+      // The accent word's signature: it arrives squeezed and lets itself out
+      // to full width (the display face's width axis). Split lines are
+      // measured at the final width, so the word only ever grows into room
+      // that is already there.
+      const stretch = (word: Element) =>
+        gsap.fromTo(
+          word,
+          { fontStretch: "56%" },
+          { fontStretch: "128%", duration: 1.5, ease: "expo.out" },
+        );
+
       // Hero: plays once, as the preloader leaves.
       const hero = sections[0];
       const heroTitle = hero.querySelector<HTMLElement>("[data-hero-title]")!;
@@ -200,6 +213,9 @@ export default function Story({
           stagger: 0.12,
           delay: d,
         });
+        heroTitle
+          .querySelectorAll(".turn")
+          .forEach((w) => stretch(w).delay(d + 0.45));
         gsap.to(heroBits, {
           autoAlpha: 1,
           y: 0,
@@ -210,33 +226,64 @@ export default function Story({
         });
       });
 
-      // Chapter headings: in as the chapter lands, back out if you scroll back.
+      // Headings: lines rise out of their masks, then the accent word
+      // stretches. Back out if you scroll back above them.
       gsap.utils.toArray<HTMLElement>("[data-reveal]", el).forEach((t) => {
-        const section = t.closest("section")!;
-        lines(t, (ls) =>
-          gsap.from(ls, {
+        lines(t, (ls) => {
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: t,
+              start: "top 85%",
+              toggleActions: "play none none reverse",
+            },
+          });
+          tl.from(ls, {
             yPercent: 115,
             duration: 1.2,
             ease: "expo.out",
             stagger: 0.09,
-            scrollTrigger: {
-              trigger: section,
-              start: "top 28%",
-              toggleActions: "play none none reverse",
-            },
-          }),
-        );
+          });
+          t.querySelectorAll(".turn").forEach((w) => tl.add(stretch(w), 0.35));
+          return tl;
+        });
       });
+
+      // Section titles: letter by letter, each rising and widening into
+      // place, the outlined echoes trailing behind (below).
+      gsap.utils.toArray<HTMLElement>("[data-chars]", el).forEach((t) => {
+        SplitText.create(t, {
+          type: "chars",
+          mask: "chars",
+          autoSplit: true,
+          onSplit: (self) =>
+            gsap.fromTo(
+              self.chars,
+              { yPercent: 105, fontStretch: "40%" },
+              {
+                yPercent: 0,
+                fontStretch: "64%",
+                duration: 1.1,
+                ease: "expo.out",
+                stagger: 0.045,
+                scrollTrigger: {
+                  trigger: t,
+                  start: "top 88%",
+                  toggleActions: "play none none reverse",
+                },
+              },
+            ),
+        });
+      });
+
       gsap.utils.toArray<HTMLElement>("[data-fade]", el).forEach((t) => {
         gsap.from(t, {
           autoAlpha: 0,
           y: 16,
           duration: 1,
           ease: "expo.out",
-          delay: 0.25,
           scrollTrigger: {
-            trigger: t.closest("section")!,
-            start: "top 28%",
+            trigger: t,
+            start: "top 90%",
             toggleActions: "play none none reverse",
           },
         });
@@ -280,6 +327,82 @@ export default function Story({
           },
         );
       });
+
+      // The year fills in, week by week, and the total counts up to it.
+      const heat = el.querySelector<HTMLElement>("[data-heat]");
+      if (heat) {
+        const total = el.querySelector<HTMLElement>("[data-total]");
+        const to = Number(total?.textContent?.replace(/\D/g, "") || 0);
+        const n = { v: 0 };
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: heat,
+            start: "top 85%",
+            toggleActions: "play none none reverse",
+          },
+        });
+        tl.from(heat.querySelectorAll("[data-cell]"), {
+          scale: 0,
+          autoAlpha: 0,
+          duration: 0.4,
+          ease: "back.out(2)",
+          stagger: { each: 0.0022 },
+        });
+        if (total)
+          tl.fromTo(
+            n,
+            { v: 0 },
+            {
+              v: to,
+              duration: 1.6,
+              ease: "power2.out",
+              onUpdate: () => {
+                total.textContent = Math.round(n.v).toLocaleString("en");
+              },
+            },
+            0,
+          );
+      }
+
+      // The ask, scrolling: drifts on its own, rushes and leans with the
+      // scroll, then settles back.
+      const track = el.querySelector<HTMLElement>("[data-marquee]");
+      if (track) {
+        const loop = gsap.to(track, {
+          xPercent: -50,
+          duration: 32,
+          ease: "none",
+          repeat: -1,
+        });
+        // Start deep into the loop so scrolling back up can run it backwards.
+        loop.totalTime(32 * 50);
+        const lean = gsap.quickTo(track, "skewX", {
+          duration: 0.5,
+          ease: "power3",
+        });
+        ScrollTrigger.create({
+          trigger: track,
+          start: "top bottom",
+          end: "bottom top",
+          onUpdate: (self) => {
+            const v = self.getVelocity();
+            const boost = 1 + Math.min(Math.abs(v) / 300, 5);
+            gsap.to(loop, {
+              timeScale: self.direction * boost,
+              duration: 0.2,
+              overwrite: true,
+            });
+            gsap.to(loop, {
+              timeScale: self.direction,
+              duration: 1.2,
+              delay: 0.25,
+              ease: "power2.out",
+            });
+            lean(gsap.utils.clamp(-8, 8, -v / 250));
+            gsap.delayedCall(0.2, () => lean(0));
+          },
+        });
+      }
 
       // About is a normal page: each block fades up as it reaches the screen.
       gsap.utils.toArray<HTMLElement>("[data-rise]", el).forEach((t) => {
@@ -359,10 +482,18 @@ export default function Story({
           >
             I build web products people actually <em className="turn">use.</em>
           </h1>
+          <p
+            data-intro
+            data-hero-bit
+            className="text-ink-muted mt-6 max-w-[42ch] text-[clamp(1.05rem,1.3vw,1.25rem)] leading-snug tracking-[-0.01em] md:mt-8"
+          >
+            Full-stack, from the database to the button. Learns fast, cooks
+            badly.
+          </p>
           <div
             data-intro
             data-hero-bit
-            className="mt-8 flex flex-wrap items-center gap-3 md:mt-10"
+            className="mt-7 flex flex-wrap items-center gap-3 md:mt-9"
           >
             <a
               href="#work"
@@ -383,7 +514,7 @@ export default function Story({
           data-hero-bit
           className="label text-ink-muted absolute right-4 bottom-20 hidden items-center gap-3 md:right-10 md:bottom-24 md:flex"
         >
-          Scroll for the work
+          Scroll, it&rsquo;s worth it
           <span className="bg-ink-faint relative block h-8 w-px overflow-hidden">
             <span className="bg-accent absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
           </span>
@@ -404,34 +535,12 @@ export default function Story({
               data-rise
               className="text-ink-muted mt-6 max-w-[34ch] text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em] md:mt-10"
             >
-              Products I took from idea to shipped. Each one plays out below as
-              you scroll — or jump straight to one.
+              Things I built because something annoyed me, or someone asked
+              nicely. Scroll and each one plays out, or skip to the one you came
+              for.
             </p>
           </div>
-          <ol className="border-ink-faint self-end border-t md:col-span-7 md:col-start-6">
-            {projects.map((p) => (
-              <li key={p.slug} data-rise className="border-ink-faint border-b">
-                <a
-                  href={`#work-${p.slug}`}
-                  className="group grid grid-cols-[2.5rem_1fr_auto] items-baseline gap-x-4 py-4 md:grid-cols-[3rem_1fr_10rem_2rem] md:py-5"
-                >
-                  <span className="label text-ink-muted">{p.index}</span>
-                  <span className="group-hover:text-accent text-[clamp(1.35rem,2.4vw,2.25rem)] font-medium tracking-[-0.03em] transition-[color,translate] duration-500 ease-[var(--ease-out-expo)] group-hover:translate-x-2">
-                    {p.title}
-                  </span>
-                  <span className="label text-ink-muted hidden md:block">
-                    {p.category} · {p.year}
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="text-ink-muted group-hover:text-accent justify-self-end transition-[color,rotate] duration-500 group-hover:-rotate-45"
-                  >
-                    →
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ol>
+          <WorkIndex className="border-ink-faint self-end border-t md:col-span-7 md:col-start-6" />
         </div>
         {projects.map((p, i) => {
           const scene = SCENES[p.slug];
@@ -478,15 +587,19 @@ export default function Story({
             className="text-ink-muted space-y-5 text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em] md:col-span-6"
           >
             <p>
-              My work usually starts as a problem someone actually has — a
-              cohort that outgrew Google Classroom, a brand stuck on a
-              storefront it can&rsquo;t control, a town that never knows if the
-              light is out for everyone. I build the thing, then sand the edges
-              until I&rsquo;d hand it to a friend without a disclaimer.
+              I&rsquo;m Chijioke, though most people call me{" "}
+              <span className="text-ink">CJ</span>. I design the data, wire up
+              the API, and sweat the interface until it feels obvious.
             </p>
             <p>
-              I care about performance, honest copy, and interfaces that get out
-              of the way.
+              I learn fast: new tool on Monday, shipping with it by Friday. I do
+              the maths in my head (slowly, but correctly), and I care about
+              performance, honest copy and interfaces that get out of the way.
+            </p>
+            <p>
+              Away from the keyboard, I&rsquo;ll know a song&rsquo;s lyrics
+              after two plays, give you a nickname you didn&rsquo;t ask for, and
+              lose any cooking contest you enter me in.
             </p>
           </div>
           <dl
@@ -504,6 +617,13 @@ export default function Story({
 
         <div className="mt-20 md:mt-28">
           <SectionTitle word="Stack" />
+          <p
+            data-rise
+            className="text-ink-muted max-w-[44ch] text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em]"
+          >
+            What I reach for first. I&rsquo;ll pick up whatever the job actually
+            needs.
+          </p>
           <ul className="border-ink-faint mt-6 grid grid-cols-2 border-t md:mt-10 md:grid-cols-4">
             {STACK.map((g) => (
               <li
@@ -541,7 +661,7 @@ export default function Story({
         aria-label={`Email ${CONTACT.email}`}
         className="border-ink-faint group relative block overflow-hidden border-y py-6 md:py-8"
       >
-        <span className="marquee-track flex w-max">
+        <span data-marquee className="flex w-max">
           {[0, 1].map((copy) => (
             <span
               key={copy}
@@ -581,15 +701,9 @@ export default function Story({
             <p data-fade className="label text-ink-muted mb-6 max-w-[40ch]">
               {CONTACT.status}
             </p>
-            <a
-              data-fade
-              href={`mailto:${CONTACT.email}`}
-              data-cursor="Write"
-              className="group relative text-[clamp(1.35rem,3.4vw,3.25rem)] tracking-[-0.03em]"
-            >
-              {CONTACT.email}
-              <span className="bg-accent absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-x-100" />
-            </a>
+            <div data-fade>
+              <EmailLink email={CONTACT.email} />
+            </div>
             <ul
               data-fade
               className="label mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3"
@@ -623,7 +737,8 @@ export default function Story({
               © {new Date().getFullYear()} {CONTACT.name}
             </span>
             <span className="hidden md:inline">
-              Built with Next.js, GSAP &amp; WebGL
+              Designed &amp; built by CJ, with Next.js, GSAP, WebGL and too much
+              curiosity
             </span>
             <a href="#top" className="hover:text-accent transition-colors">
               Back to top ↑

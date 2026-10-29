@@ -39,7 +39,7 @@ export default function SectionTitle({
             {word}
           </span>
         ))}
-        <h2 id={id} data-reveal className="display relative block">
+        <h2 id={id} data-chars className="display relative block">
           {word}
         </h2>
       </div>

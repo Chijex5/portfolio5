@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef } from "react";
-import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 import type { Project } from "@/lib/types";
 import SceneFrame from "./SceneFrame";
 import type { Scene } from "./scenes";
@@ -81,6 +81,42 @@ export default function ProjectChapter({
         );
       });
 
+      if (!reduced) {
+        // The screen opens upward as the chapter arrives, like a new scene.
+        gsap.fromTo(
+          el.querySelector(".screen"),
+          { clipPath: "inset(100% 0% 0% 0% round 22px)" },
+          {
+            clipPath: "inset(0% 0% 0% 0% round 22px)",
+            ease: "none",
+            scrollTrigger: {
+              trigger: el,
+              start: "top bottom",
+              end: "top 15%",
+              scrub: 0.5,
+            },
+          },
+        );
+        // And the name types itself in, a letter at a time.
+        const name = el.querySelector<HTMLElement>("[data-name]");
+        if (name)
+          SplitText.create(name, {
+            type: "chars",
+            autoSplit: true,
+            onSplit: (self) =>
+              gsap.from(self.chars, {
+                autoAlpha: 0,
+                duration: 0.01,
+                stagger: 0.04,
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 45%",
+                  toggleActions: "play none none reverse",
+                },
+              }),
+          });
+      }
+
       ScrollTrigger.create({
         trigger: el,
         // The first step builds while the chapter scrolls into place.
@@ -127,7 +163,7 @@ export default function ProjectChapter({
               onNavigate={onOpen}
               data-cursor="Case study"
             >
-              {project.title}
+              <span data-name>{project.title}</span>
             </Link>
           </h2>
           <p className="text-ink-muted mt-3 max-w-[30ch] text-[clamp(1rem,1.3vw,1.2rem)] leading-snug tracking-[-0.01em] md:mt-4">

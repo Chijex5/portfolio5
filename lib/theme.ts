@@ -52,20 +52,65 @@ export const theme = {
   getServer(): Theme {
     return SERVER;
   },
-  set(next: Partial<Theme>) {
+  /**
+   * Whether the last switch should snap rather than ease (it is being shown
+   * by a view transition instead). Read by the particle stage.
+   */
+  instant: false,
+  set(next: Partial<Theme>, { instant = false } = {}) {
     const t = { ...theme.get(), ...next };
     current = t;
+    theme.instant = instant;
     const d = document.documentElement;
     // Colours ease over for the length of the switch only — a permanent
     // transition would also animate every hover and the first paint.
-    d.classList.add("theme-anim");
+    if (!instant) {
+      d.classList.add("theme-anim");
+      window.setTimeout(() => d.classList.remove("theme-anim"), 600);
+    }
     d.setAttribute("data-theme", t.mode);
     d.setAttribute("data-accent", t.accent);
-    window.setTimeout(() => d.classList.remove("theme-anim"), 600);
     try {
       localStorage.setItem(KEY, JSON.stringify(t));
     } catch {}
     listeners.forEach((fn) => fn());
+  },
+  /**
+   * Switch light/dark as a circle spreading out from (x, y) — the button
+   * that was pressed. Falls back to the plain eased switch where view
+   * transitions are missing or motion is reduced.
+   */
+  toggleFrom(x: number, y: number) {
+    const mode: Mode = theme.get().mode === "dark" ? "light" : "dark";
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!document.startViewTransition || reduced) {
+      theme.set({ mode });
+      return;
+    }
+    const r = Math.hypot(
+      Math.max(x, innerWidth - x),
+      Math.max(y, innerHeight - y),
+    );
+    const vt = document.startViewTransition(() =>
+      theme.set({ mode }, { instant: true }),
+    );
+    vt.ready
+      .then(() => {
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${r}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 750,
+            easing: "cubic-bezier(0.87, 0, 0.13, 1)",
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+      })
+      .catch(() => {});
   },
   subscribe(fn: () => void) {
     listeners.add(fn);

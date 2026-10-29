@@ -212,7 +212,7 @@ export function cj(n: number, w: number, h: number, family: string): ShapeData {
   const r = rng(11);
   const s = alloc(n);
   const mobile = isMobile(w);
-  const size = mobile ? w * 0.4 : Math.min(w * 0.36, h * 0.82);
+  const size = mobile ? w * 0.36 : Math.min(w * 0.36, h * 0.82);
   const font = `italic 900 ${size}px ${family}`;
   const cw = size * 1.6;
   const ch = size * 1.05;
@@ -240,7 +240,7 @@ export function cj(n: number, w: number, h: number, family: string): ShapeData {
   const box = anchorBox(w, h);
   return {
     ...s,
-    center: [mobile ? 0 : box.cx + w * 0.04, mobile ? h * 0.16 : h * 0.06, 0],
+    center: [mobile ? 0 : box.cx + w * 0.04, mobile ? h * 0.27 : h * 0.06, 0],
     size: Math.max(1.6, step * 0.8),
     mode: 1,
     pulse: 0,

@@ -42,9 +42,11 @@ export default function Activity({ data }: { data: Data }) {
   return (
     <figure>
       <figcaption className="mb-6 flex flex-wrap items-baseline justify-between gap-4">
-        <span className="label text-ink-muted">GitHub activity</span>
+        <span className="label text-ink-muted">
+          GitHub activity — the receipts
+        </span>
         <span className="text-[1.05rem] tracking-[-0.01em]">
-          <span className="font-semibold tabular-nums">
+          <span data-total className="font-semibold tabular-nums">
             {data.total.toLocaleString("en")}
           </span>{" "}
           contributions in the last year
@@ -55,6 +57,7 @@ export default function Activity({ data }: { data: Data }) {
       <div className="overflow-x-auto pb-2">
         <div
           role="img"
+          data-heat
           aria-label={`${data.total} GitHub contributions in the last year`}
           className="grid max-w-[1000px] min-w-[720px] grid-flow-col gap-[3px]"
           style={{
@@ -72,6 +75,7 @@ export default function Activity({ data }: { data: Data }) {
                 return (
                   <span
                     key={d}
+                    data-cell={day ? "" : undefined}
                     title={day ? `${day.count} on ${day.date}` : undefined}
                     className={`aspect-square rounded-[2px] ${day ? SHADES[day.level] : ""}`}
                   />

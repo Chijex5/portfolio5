@@ -277,7 +277,8 @@ class Stage {
     const t = { k: 0 };
     gsap.to(t, {
       k: 1,
-      duration: this.ready ? 0.5 : 0,
+      // Snap when a view transition is showing the switch instead.
+      duration: this.ready && !theme.instant ? 0.5 : 0,
       ease: "power1.out",
       overwrite: true,
       onUpdate: () => {
