@@ -190,7 +190,9 @@ export default function Story({
       const offIntro = intro.onReveal(() => {
         heroPlayed = true;
         const ls = heroTitle.querySelectorAll(".split-line");
-        const d = returning ? 0.15 : 0.9;
+        // The preloader calls this as its wipe passes mid-screen; a short
+        // delay lets the headline rise into the space the wipe just cleared.
+        const d = returning ? 0.15 : 0.3;
         gsap.to(ls, {
           yPercent: 0,
           duration: 1.4,
