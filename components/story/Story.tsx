@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { chapter } from "@/lib/chapter";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 import { intro } from "@/lib/intro";
@@ -13,20 +13,16 @@ import ProjectChapter from "@/components/work/ProjectChapter";
 import { SCENES } from "@/components/work/scenes";
 
 /**
- * The home page: CJ's story told in eight beats, drawn by the particle stage.
+ * The home page, drawn over the particle stage:
  *
- *   hero     "CJ."             — who
- *   navy     an anchor         — the first plan
- *   jss2     <h1>, h1 to h6    — the textbook, Notepad, the feeling
- *   bribe    jollof + chicken  — how Computer Science became Statistics
- *   stats    a Galton board    — maths, done in his head
- *   build    a live graph      — the building stuck
- *   proof    seven scenes      — what came out of it, each acted out
- *   hello    "Say hello."      — the ask
+ *   hero     "CJ."         — who, what, and how to reach him
+ *   work     quiet field   — each project acted out
+ *   about    quiet field   — stack, what he's on now, GitHub activity
+ *   hello    "Say hello."  — the ask
  *
- * Each chapter is a tall section with a sticky, screen-high inner. Scrolling
- * into a section morphs the stage from the previous chapter's shape to this one;
- * scrolling through it holds the shape while its copy reads. The stage is driven
+ * The hero, work and hello hold the screen while their section scrolls
+ * past; about reads like a normal page. Scrolling into a section morphs the
+ * stage from the previous section's shape to this one. The stage is driven
  * from one function of scroll position (`update`), so jumping anywhere — an
  * anchor, a reload mid-page, scrolling backwards — always lands on the right
  * picture.
@@ -42,21 +38,38 @@ type Beat = {
 };
 
 const BEATS: readonly Beat[] = [
-  { id: "top", shape: "cj", index: "00", label: "CJ", vh: 1 },
-  { id: "navy", shape: "anchor", index: "01", label: "The Navy", vh: 1.8 },
-  { id: "jss2", shape: "tag", index: "02", label: "JSS2", vh: 2.3 },
-  { id: "bribe", shape: "plate", index: "03", label: "The bribe", vh: 2.4 },
-  { id: "stats", shape: "bell", index: "04", label: "Statistics", vh: 1.8 },
-  { id: "build", shape: "flow", index: "05", label: "Still building", vh: 1.8 },
+  { id: "top", shape: "cj", index: "00", label: "Intro", vh: 1 },
   // The projects carry this chapter themselves; the stage drops to a quiet
   // field behind them. Its height is the sum of the project chapters.
-  { id: "work", shape: "field", index: "06", label: "Proof", vh: 0 },
-  { id: "contact", shape: "hello", index: "07", label: "Hello", vh: 1.6 },
+  { id: "work", shape: "field", index: "01", label: "Work", vh: 0 },
+  // Natural height: it is read, not scrubbed.
+  { id: "about", shape: "field", index: "02", label: "About", vh: 0 },
+  { id: "contact", shape: "hello", index: "03", label: "Hello", vh: 1.6 },
 ];
 
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
 
-export default function Story() {
+/** What CJ is on right now. */
+const NOW = [
+  { label: "Building", value: "Rise Classroom" },
+  { label: "Learning", value: "Risevest Academy" },
+  { label: "Studied", value: "Statistics, University of Nigeria" },
+  { label: "Based", value: "Lagos · remote" },
+] as const;
+
+const STACK = [
+  { group: "Frontend", items: ["React", "Next.js", "TypeScript", "Tailwind"] },
+  { group: "Mobile", items: ["React Native"] },
+  { group: "Backend", items: ["Python", "FastAPI"] },
+  { group: "Data", items: ["PostgreSQL", "MongoDB"] },
+] as const;
+
+export default function Story({
+  activity,
+}: {
+  /** The GitHub activity block, rendered on the server. */
+  activity?: React.ReactNode;
+}) {
   const root = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const busy = useRef(false);
@@ -237,28 +250,19 @@ export default function Story() {
         });
       });
 
-      // Lines that pile up one at a time as you hold in a chapter.
-      sections.forEach((section) => {
-        gsap.utils
-          .toArray<HTMLElement>("[data-pile]", section)
-          .forEach((t, i) => {
-            gsap.fromTo(
-              t,
-              { yPercent: 110 },
-              {
-                yPercent: 0,
-                ease: "power2.out",
-                scrollTrigger: {
-                  trigger: section,
-                  start: () =>
-                    `top+=${window.innerHeight * (i * 0.32 - 0.55)} top`,
-                  end: () =>
-                    `top+=${window.innerHeight * (i * 0.32 - 0.3)} top`,
-                  scrub: 0.6,
-                },
-              },
-            );
-          });
+      // About is a normal page: each block fades up as it reaches the screen.
+      gsap.utils.toArray<HTMLElement>("[data-rise]", el).forEach((t) => {
+        gsap.from(t, {
+          autoAlpha: 0,
+          y: 24,
+          duration: 1,
+          ease: "expo.out",
+          scrollTrigger: {
+            trigger: t,
+            start: "top 88%",
+            toggleActions: "play none none reverse",
+          },
+        });
       });
 
       return () => {
@@ -304,107 +308,58 @@ export default function Story() {
           <p
             data-intro
             data-hero-bit
-            className="label text-ink-muted mb-6 md:mb-8"
+            className="label text-ink-muted mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 md:mb-8"
           >
-            {CONTACT.name} <span className="text-jollof">/</span> {CONTACT.role}
+            <span>
+              {CONTACT.name} <span className="text-jollof">/</span>{" "}
+              {CONTACT.role}
+            </span>
+            {CONTACT.available && (
+              <span className="border-jollof text-jollof inline-flex -rotate-3 items-center gap-2 border px-2 py-1">
+                <span className="bg-jollof h-1.5 w-1.5 animate-pulse rounded-full" />
+                Open to work · Freelance
+              </span>
+            )}
           </p>
           <h1
             data-intro
             data-hero-title
-            className="display max-w-[11ch] text-[clamp(3.2rem,7.2vw,9rem)] md:max-w-[12ch]"
+            className="display max-w-[12ch] text-[clamp(3.2rem,7.6vw,9.5rem)]"
           >
-            I build things that make people ask{" "}
-            <em className="turn">who made this?</em>
+            I build web products people actually <em className="turn">use.</em>
           </h1>
+          <div
+            data-intro
+            data-hero-bit
+            className="mt-8 flex flex-wrap items-center gap-3 md:mt-10"
+          >
+            <a
+              href="#work"
+              className="bg-ink text-paper hover:bg-jollof rounded-full px-5 py-3 text-[0.95rem] tracking-[-0.01em] transition-colors"
+            >
+              See the work
+            </a>
+            <a
+              href={`mailto:${CONTACT.email}`}
+              className="border-ink-faint hover:border-ink rounded-full border px-5 py-3 text-[0.95rem] tracking-[-0.01em] transition-colors"
+            >
+              Email me
+            </a>
+          </div>
         </div>
         <p
           data-intro
           data-hero-bit
           className="label text-ink-muted absolute right-4 bottom-20 hidden items-center gap-3 md:right-10 md:bottom-24 md:flex"
         >
-          Scroll for the story
+          Scroll for the work
           <span className="bg-ink-faint relative block h-8 w-px overflow-hidden">
             <span className="bg-jollof absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
           </span>
         </p>
       </section>
 
-      {/* 01 — The Navy ------------------------------------------------------ */}
-      <Chapter id="navy" vh={BEATS[1].vh}>
-        <Eyebrow index="01" label="The Navy" />
-        <h2 data-reveal className="display text-[clamp(2.8rem,7vw,8rem)]">
-          Primary-school plan: the <em className="turn">Navy.</em>
-        </h2>
-        <p data-fade className="label text-ink-muted mt-6">
-          Got as far as military boarding school. Always hungry.
-        </p>
-      </Chapter>
-
-      {/* 02 — JSS2 ---------------------------------------------------------- */}
-      <Chapter id="jss2" vh={BEATS[2].vh}>
-        <Eyebrow index="02" label="JSS2" />
-        <h2 className="sr-only">How it started</h2>
-        <ul className="display space-y-[0.08em] text-[clamp(2.4rem,5.4vw,6.5rem)]">
-          <li className="line-mask">
-            <span data-pile className="block">
-              One HTML textbook.
-            </span>
-          </li>
-          <li className="line-mask">
-            <span data-pile className="block">
-              Notepad. A single{" "}
-              <code className="text-jollof font-mono text-[0.72em] font-normal tracking-[-0.04em]">
-                &lt;h1&gt;
-              </code>
-            </span>
-          </li>
-          <li className="line-mask">
-            <span data-pile className="block">
-              I felt like a <em className="turn">god.</em>
-            </span>
-          </li>
-        </ul>
-        <p data-fade className="label text-ink-muted mt-6">
-          Never figured out CSS that term. Still chasing that feeling.
-        </p>
-      </Chapter>
-
-      {/* 03 — The bribe ----------------------------------------------------- */}
-      <Chapter id="bribe" vh={BEATS[3].vh}>
-        <Eyebrow index="03" label="The bribe" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.2vw,7.25rem)]">
-          I wanted Computer Science. Then Mum visited with{" "}
-          <em className="turn">jollof.</em>
-        </h2>
-        <p data-fade className="label text-ink-muted mt-6 max-w-[46ch]">
-          Six big pieces of chicken. A lot of plantain. I said{" "}
-          <span className="text-ink">&ldquo;yes ma.&rdquo;</span>
-        </p>
-      </Chapter>
-
-      {/* 04 — Statistics ---------------------------------------------------- */}
-      <Chapter id="stats" vh={BEATS[4].vh}>
-        <Eyebrow index="04" label="Statistics" />
-        <h2 data-reveal className="display text-[clamp(2.8rem,7vw,8rem)]">
-          So: <em className="turn">Statistics.</em>
-        </h2>
-        <p data-fade className="label text-ink-muted mt-6">
-          I do the maths in my head. Slowly, but correctly.
-        </p>
-      </Chapter>
-
-      {/* 05 — Still building ------------------------------------------------ */}
-      <Chapter id="build" vh={BEATS[5].vh}>
-        <Eyebrow index="05" label="Still building" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.4vw,7.5rem)]">
-          The AI plan never stuck. The <em className="turn">building</em> did.
-        </h2>
-        <p data-fade className="label text-ink-muted mt-6">
-          Schema, API, interface — React, Next.js, TypeScript, Python, Postgres.
-        </p>
-      </Chapter>
-
-      {/* 06 — Proof: each project acts itself out ------------------------ */}
+      {/* 01 — Work: each project acts itself out ------------------------- */}
       <section id="work" className="relative">
         <h2 className="sr-only">Selected work</h2>
         {projects.map((p, i) => {
@@ -423,11 +378,83 @@ export default function Story() {
         })}
       </section>
 
-      {/* 07 — Hello --------------------------------------------------------- */}
+      {/* 02 — About ------------------------------------------------------- */}
+      <section
+        id="about"
+        className="relative px-4 pt-32 pb-24 md:px-10 md:pt-48 md:pb-40"
+      >
+        <Eyebrow index="02" label="About" />
+        <h2
+          data-reveal
+          className="display max-w-[18ch] text-[clamp(2.6rem,5.6vw,6.5rem)]"
+        >
+          I like owning the whole picture — schema, API, and the{" "}
+          <em className="turn">interface.</em>
+        </h2>
+        <div className="mt-14 grid gap-x-10 gap-y-14 md:mt-20 md:grid-cols-12">
+          <div
+            data-rise
+            className="text-ink-muted space-y-5 text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em] md:col-span-6"
+          >
+            <p>
+              My work usually starts as a problem someone actually has — a
+              cohort that outgrew Google Classroom, a brand stuck on a
+              storefront it can&rsquo;t control, a town that never knows if the
+              light is out for everyone. I build the thing, then sand the edges
+              until I&rsquo;d hand it to a friend without a disclaimer.
+            </p>
+            <p>
+              I care about performance, honest copy, and interfaces that get out
+              of the way.
+            </p>
+          </div>
+          <dl
+            data-rise
+            className="grid grid-cols-[auto_1fr] content-start gap-x-8 gap-y-4 md:col-span-5 md:col-start-8"
+          >
+            {NOW.map((n) => (
+              <Fragment key={n.label}>
+                <dt className="label text-ink-muted pt-1">{n.label}</dt>
+                <dd className="text-[1.05rem] tracking-[-0.01em]">{n.value}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </div>
+
+        <div className="mt-20 md:mt-28">
+          <p data-rise className="label text-ink-muted mb-6">
+            Stack
+          </p>
+          <ul
+            data-rise
+            className="border-ink-faint grid border-t md:grid-cols-4"
+          >
+            {STACK.map((g) => (
+              <li
+                key={g.group}
+                className="border-ink-faint border-b py-5 md:border-r md:px-5 md:first:pl-0 md:last:border-r-0"
+              >
+                <p className="label text-jollof">{g.group}</p>
+                <p className="mt-3 text-[1.05rem] leading-snug tracking-[-0.01em]">
+                  {g.items.join(" · ")}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {activity && (
+          <div data-rise className="mt-20 md:mt-28">
+            {activity}
+          </div>
+        )}
+      </section>
+
+      {/* 03 — Hello --------------------------------------------------------- */}
       <section
         id="contact"
         className="relative"
-        style={{ height: `${BEATS[7].vh * 100}svh` }}
+        style={{ height: `${BEATS[3].vh * 100}svh` }}
       >
         <div className="sticky top-0 flex h-svh flex-col justify-end px-4 pb-20 md:px-10 md:pb-24">
           <h2 className="sr-only">Say hello</h2>
@@ -478,36 +505,6 @@ export default function Story() {
         </div>
       </section>
     </div>
-  );
-}
-
-function Chapter({
-  id,
-  vh,
-  top,
-  children,
-}: {
-  id: string;
-  vh: number;
-  /** Copy at the top of the screen instead of the bottom. */
-  top?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <section id={id} className="relative" style={{ height: `${vh * 100}svh` }}>
-      <div className="sticky top-0 h-svh">
-        <div
-          data-exit
-          className={
-            top
-              ? "absolute inset-x-4 top-24 md:inset-x-10 md:top-32"
-              : "absolute inset-x-4 bottom-20 md:inset-x-10 md:bottom-24 md:max-w-[44vw]"
-          }
-        >
-          {children}
-        </div>
-      </div>
-    </section>
   );
 }
 

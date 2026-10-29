@@ -2,18 +2,7 @@ import { gsap } from "@/lib/gsap";
 import { isMobile } from "./layout";
 import { fill, program, texture, upload, type Uniforms } from "./gl";
 import { fragmentShader, vertexShader } from "./shaders";
-import {
-  anchor,
-  bell,
-  cj,
-  field,
-  flow,
-  hello,
-  plate,
-  seed,
-  tag,
-  type ShapeData,
-} from "./shapes";
+import { cj, field, hello, seed, type ShapeData } from "./shapes";
 
 /**
  * The particle stage: one fixed, full-screen WebGL canvas that the whole site
@@ -26,16 +15,7 @@ import {
  * scrolls. The stage never reads scroll itself.
  */
 
-export type ShapeId =
-  | "seed"
-  | "cj"
-  | "anchor"
-  | "tag"
-  | "plate"
-  | "bell"
-  | "flow"
-  | "field"
-  | "hello";
+export type ShapeId = "seed" | "cj" | "field" | "hello";
 
 type Slot = { pos: WebGLTexture; col: WebGLTexture; data: ShapeData };
 
@@ -45,7 +25,6 @@ const FOV = 35;
 type Listener = () => void;
 
 const DISPLAY_VAR = "--font-display-family";
-const MONO_VAR = "--font-mono-family";
 
 class Stage {
   /** Particles per shape. Set once at init from the device. */
@@ -98,7 +77,6 @@ class Stage {
   });
   private slots = new Map<ShapeId, Slot>();
   private family = "sans-serif";
-  private mono = "monospace";
   private w = 0;
   private h = 0;
 
@@ -193,17 +171,15 @@ class Stage {
     this.size();
     this.report(0.1);
 
-    // The faces the type shapes are set in. next/font hashes the family names,
-    // so they are read back from the CSS variables rather than hard-coded.
-    const css = getComputedStyle(document.documentElement);
-    const fam = css.getPropertyValue(DISPLAY_VAR).trim();
+    // The face "CJ." and "Say hello." are set in. next/font hashes the family
+    // name, so it is read back from the CSS variable rather than hard-coded.
+    const fam = getComputedStyle(document.documentElement)
+      .getPropertyValue(DISPLAY_VAR)
+      .trim();
     if (fam) this.family = fam;
-    const mono = css.getPropertyValue(MONO_VAR).trim();
-    if (mono) this.mono = mono;
     const fontReady = Promise.all([
       document.fonts.load(`italic 900 100px ${this.family}`),
       document.fonts.load(`900 100px ${this.family}`),
-      document.fonts.load(`500 100px ${this.mono}`),
     ])
       .catch(() => undefined)
       .then(() => this.report(this.progress + 0.1));
@@ -269,11 +245,6 @@ class Stage {
     return [
       () => this.slot("seed", seed(n)),
       () => this.slot("cj", cj(n, w, h, this.family)),
-      () => this.slot("anchor", anchor(n, w, h)),
-      () => this.slot("tag", tag(n, w, h, this.mono)),
-      () => this.slot("plate", plate(n, w, h)),
-      () => this.slot("bell", bell(n, w, h)),
-      () => this.slot("flow", flow(n, w, h)),
       () => this.slot("field", field(n, w, h)),
       () => this.slot("hello", hello(n, w, h, this.family)),
     ];

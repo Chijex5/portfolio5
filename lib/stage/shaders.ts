@@ -89,22 +89,9 @@ vec3 animate(vec3 p, float mode, float t){
     // turn — type that leans toward you and back, just enough to show depth.
     p = rotX(sin(t * 0.21) * 0.08 * uMotion) * rotY(sin(t * 0.17) * 0.32 * uMotion) * p;
     p += snoise3(p * 0.008 + t * 0.15) * 3.0 * uMotion;
-  } else if (mode > 1.5 && mode < 2.5) {
+  } else if (mode > 1.5) {
     // drift — free particles churn on a noise field: restless, never settled.
     p += snoise3(p * 0.0024 + vec3(0., 0., t * 0.11)) * 150.0 * uMotion;
-  } else if (mode > 2.5 && mode < 3.5) {
-    // sway — hung from the top of the shape, like an anchor on its rope.
-    float a = sin(t * 0.55) * 0.07 * uMotion;
-    float c = cos(a), s = sin(a);
-    vec2 q = p.xy - vec2(0.0, 400.0);
-    p.xy = vec2(c * q.x - s * q.y, s * q.x + c * q.y) + vec2(0.0, 400.0);
-  } else if (mode > 3.5) {
-    // table — laid flat (z is height above the table), turning slowly, seen
-    // from across the table.
-    float a = t * 0.09 * uMotion;
-    float c = cos(a), s = sin(a);
-    p.xy = vec2(c * p.x - s * p.y, s * p.x + c * p.y);
-    p = rotX(-1.02) * p;
   }
   return p;
 }

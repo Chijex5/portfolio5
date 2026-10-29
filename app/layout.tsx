@@ -47,7 +47,7 @@ const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
   : "http://localhost:3000";
 
 const DESCRIPTION =
-  "Chijioke Uzodinma (CJ) is a full-stack developer. Wanted the Navy, found HTML in JSS2, got talked into Statistics with a plate of jollof — and kept building anyway.";
+  "Chijioke Uzodinma (CJ) is a full-stack developer who designs the data model, builds the API, and sweats the interface — from cohort platforms to storefronts.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

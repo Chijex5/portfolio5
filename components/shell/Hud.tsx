@@ -8,7 +8,8 @@ import { CONTACT, NAV_LINKS } from "@/lib/nav";
 
 /**
  * The four corners. Wordmark and nav up top; the running chapter and Lagos time
- * along the bottom. Plain ink on paper; nothing it sits over is dark.
+ * along the bottom. Each bar fades the paper in behind itself, so copy that
+ * scrolls under it (the about section) stays out of the way.
  */
 export default function Hud() {
   const current = useSyncExternalStore(
@@ -19,7 +20,7 @@ export default function Hud() {
 
   return (
     <>
-      <header className="text-ink pointer-events-none fixed inset-x-0 top-0 z-40 flex items-start justify-between p-4 md:p-10">
+      <header className="text-ink from-paper via-paper/85 pointer-events-none fixed inset-x-0 top-0 z-40 flex items-start justify-between bg-gradient-to-b to-transparent p-4 md:p-10">
         <Link
           href="/"
           data-cursor="Home"
@@ -48,7 +49,7 @@ export default function Hud() {
 
       <div
         aria-hidden="true"
-        className="label text-ink-muted pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-end justify-between p-4 md:p-10"
+        className="label text-ink-muted from-paper via-paper/85 pointer-events-none fixed inset-x-0 bottom-0 z-40 flex items-end justify-between bg-gradient-to-t to-transparent p-4 md:p-10"
       >
         <p className="flex items-center gap-3">
           <span className="text-ink tabular-nums">{current.index}</span>
