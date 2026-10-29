@@ -1,27 +1,47 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * Tokens. Dark ink, bone type, one vermilion signal — the same three
- * colours the particle stage draws with (lib/stage/shapes.ts).
+ * Tokens. Ink on rice-cream paper, one jollof red, plantain for the rare
+ * second note — the same colours the particle stage prints with
+ * (lib/stage/shapes.ts).
  * ------------------------------------------------------------------ */
 :root {
-  --ink: #0a0a0a;
-  --ink-raised: #141312;
-  --bone: #ede8df;
-  --bone-muted: color-mix(in oklab, var(--bone) 56%, transparent);
-  --bone-faint: color-mix(in oklab, var(--bone) 16%, transparent);
-  --signal: #ff4a1c;
+  --paper: #f3eadb;
+  --paper-raised: #ebdfca;
+  --ink: #1a120d;
+  --ink-muted: color-mix(in oklab, var(--ink) 62%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 16%, transparent);
+  --jollof: #b8321a;
+  --plantain: #e9a93b;
 
+  color-scheme: light;
+}
+
+/* A screen set into the page: the project scenes are product UI, and product
+   UI lives on a dark device. Inside, the tokens flip back to light-on-dark, so
+   scene code reads `text-ink` and gets the screen's ink. Every token that is
+   derived from another is redeclared, because custom properties inherit as
+   already-resolved values. */
+.screen {
+  --paper: #0f0c0a;
+  --paper-raised: #1a1613;
+  --ink: #ede8df;
+  --ink-muted: color-mix(in oklab, var(--ink) 56%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 16%, transparent);
+  --jollof: #ff4a1c;
+
+  color: var(--ink);
   color-scheme: dark;
 }
 
 @theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
   --color-ink: var(--ink);
-  --color-ink-raised: var(--ink-raised);
-  --color-bone: var(--bone);
-  --color-bone-muted: var(--bone-muted);
-  --color-bone-faint: var(--bone-faint);
-  --color-signal: var(--signal);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-jollof: var(--jollof);
+  --color-plantain: var(--plantain);
 
   --font-display: var(--font-display-family), system-ui, sans-serif;
   --font-serif: var(--font-serif-family), Georgia, serif;
@@ -54,12 +74,12 @@ html.is-locked {
  * ------------------------------------------------------------------ */
 html {
   scroll-padding-top: 0;
-  background: var(--ink);
+  background: var(--paper);
 }
 
 body {
-  background: var(--ink);
-  color: var(--bone);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -70,12 +90,12 @@ body {
 }
 
 ::selection {
-  background: var(--signal);
-  color: var(--ink);
+  background: var(--jollof);
+  color: var(--paper);
 }
 
 :focus-visible {
-  outline: 1px solid var(--signal);
+  outline: 1px solid var(--jollof);
   outline-offset: 4px;
 }
 
@@ -93,21 +113,24 @@ body {
  * ------------------------------------------------------------------ */
 .display {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.045em;
-  line-height: 0.9;
+  font-weight: 800;
+  /* Anybody, squeezed: hand-painted shop-sign proportions rather than the
+     neutral grotesk every template ships with. */
+  font-stretch: 64%;
+  letter-spacing: -0.012em;
+  line-height: 0.86;
 }
 
-/* The one word per chapter that carries the turn. */
+/* The one word per chapter that carries the turn: the same face, let out wide
+   and slanted, in jollof. */
 .turn {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: var(--signal);
-  /* Instrument Serif sits small next to the grotesk at the same size. */
-  font-size: 1.08em;
-  padding-right: 0.04em;
+  font-weight: 700;
+  font-stretch: 128%;
+  letter-spacing: -0.03em;
+  color: var(--jollof);
+  padding-right: 0.06em;
 }
 
 .label {
@@ -154,7 +177,8 @@ body {
  * ------------------------------------------------------------------ */
 .grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  opacity: 0.05;
+  opacity: 0.16;
+  mix-blend-mode: multiply;
 }
 
 /* ------------------------------------------------------------------ *

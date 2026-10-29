@@ -3,15 +3,15 @@ import { isMobile } from "./layout";
 import { fill, program, texture, upload, type Uniforms } from "./gl";
 import { fragmentShader, vertexShader } from "./shaders";
 import {
-  calm,
+  anchor,
+  bell,
+  cj,
   field,
   flow,
   hello,
-  knot,
-  noise,
-  schema,
+  plate,
   seed,
-  surface,
+  tag,
   type ShapeData,
 } from "./shapes";
 
@@ -28,14 +28,14 @@ import {
 
 export type ShapeId =
   | "seed"
-  | "knot"
-  | "noise"
-  | "schema"
+  | "cj"
+  | "anchor"
+  | "tag"
+  | "plate"
+  | "bell"
   | "flow"
-  | "surface"
-  | "calm"
-  | "hello"
-  | "field";
+  | "field"
+  | "hello";
 
 type Slot = { pos: WebGLTexture; col: WebGLTexture; data: ShapeData };
 
@@ -45,6 +45,7 @@ const FOV = 35;
 type Listener = () => void;
 
 const DISPLAY_VAR = "--font-display-family";
+const MONO_VAR = "--font-mono-family";
 
 class Stage {
   /** Particles per shape. Set once at init from the device. */
@@ -97,6 +98,7 @@ class Stage {
   });
   private slots = new Map<ShapeId, Slot>();
   private family = "sans-serif";
+  private mono = "monospace";
   private w = 0;
   private h = 0;
 
@@ -191,14 +193,18 @@ class Stage {
     this.size();
     this.report(0.1);
 
-    // The display face, for "Say hello." next/font hashes the family name, so it
-    // is read back from the CSS variable rather than hard-coded.
-    const fam = getComputedStyle(document.documentElement)
-      .getPropertyValue(DISPLAY_VAR)
-      .trim();
+    // The faces the type shapes are set in. next/font hashes the family names,
+    // so they are read back from the CSS variables rather than hard-coded.
+    const css = getComputedStyle(document.documentElement);
+    const fam = css.getPropertyValue(DISPLAY_VAR).trim();
     if (fam) this.family = fam;
-    const fontReady = document.fonts
-      .load(`600 100px ${this.family}`)
+    const mono = css.getPropertyValue(MONO_VAR).trim();
+    if (mono) this.mono = mono;
+    const fontReady = Promise.all([
+      document.fonts.load(`italic 900 100px ${this.family}`),
+      document.fonts.load(`900 100px ${this.family}`),
+      document.fonts.load(`500 100px ${this.mono}`),
+    ])
       .catch(() => undefined)
       .then(() => this.report(this.progress + 0.1));
 
@@ -262,13 +268,13 @@ class Stage {
     const { n, w, h } = this;
     return [
       () => this.slot("seed", seed(n)),
-      () => this.slot("knot", knot(n, w, h)),
-      () => this.slot("noise", noise(n, w, h)),
-      () => this.slot("schema", schema(n, w, h)),
+      () => this.slot("cj", cj(n, w, h, this.family)),
+      () => this.slot("anchor", anchor(n, w, h)),
+      () => this.slot("tag", tag(n, w, h, this.mono)),
+      () => this.slot("plate", plate(n, w, h)),
+      () => this.slot("bell", bell(n, w, h)),
       () => this.slot("flow", flow(n, w, h)),
-      () => this.slot("surface", surface(n, w, h)),
       () => this.slot("field", field(n, w, h)),
-      () => this.slot("calm", calm(n, w, h)),
       () => this.slot("hello", hello(n, w, h, this.family)),
     ];
   }
@@ -325,7 +331,7 @@ class Stage {
 
   /**
    * The first-load intro: every particle starts at one point and flies to the
-   * hero knot. Returns the tween so the caller can sequence copy against it.
+   * hero "CJ." Returns the tween so the caller can sequence copy against it.
    */
   intro() {
     this.introduced = true;
@@ -385,9 +391,10 @@ class Stage {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(this.prog);
     gl.bindVertexArray(this.vao!);
-    // Premultiplied output, added: dense areas glow.
+    // Premultiplied "over": ink laid on paper, so dense areas print darker
+    // rather than glowing.
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     upload(gl, this.prog, this.u, this.locations);
     gl.drawArrays(gl.POINTS, 0, this.n);
   };

@@ -63,9 +63,9 @@ function Screen({ node }: { node: Node }) {
         width: W,
         height: H,
         borderStyle: node.ghost ? "dashed" : "solid",
-        borderColor: node.ghost ? "#ff4a1c" : "var(--bone-faint)",
+        borderColor: node.ghost ? "#ff4a1c" : "var(--ink-faint)",
         background: node.ghost ? "rgba(255,74,28,0.06)" : "#161514",
-        color: node.ghost ? "#ff4a1c" : "var(--bone)",
+        color: node.ghost ? "#ff4a1c" : "var(--ink)",
       }}
     >
       <span
@@ -78,7 +78,7 @@ function Screen({ node }: { node: Node }) {
       {node.ghost ? (
         <span
           data-missing
-          className="text-ink absolute -top-2.5 right-2 rounded-full bg-[#ff4a1c] px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.08em] uppercase"
+          className="text-paper absolute -top-2.5 right-2 rounded-full bg-[#ff4a1c] px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.08em] uppercase"
         >
           missing
         </span>
@@ -228,13 +228,13 @@ export default function WayframeScene({ register }: SceneProps) {
   );
 
   return (
-    <div ref={root} className="text-bone relative h-full w-full">
+    <div ref={root} className="text-ink relative h-full w-full">
       {/* Prompt */}
       <Panel
         data-prompt
         className="top-[14px] left-[20px] h-[70px] w-[560px] overflow-hidden px-4 py-3"
       >
-        <p className="label text-bone-muted text-[9px]">Describe your app</p>
+        <p className="label text-ink-muted text-[9px]">Describe your app</p>
         <div className="relative mt-1.5 h-[22px]">
           <p
             data-typed-line
@@ -245,12 +245,12 @@ export default function WayframeScene({ register }: SceneProps) {
             </span>
             <span
               data-caret
-              className="bg-signal ml-0.5 inline-block h-[16px] w-[2px]"
+              className="bg-jollof ml-0.5 inline-block h-[16px] w-[2px]"
             />
           </p>
           <p
             data-check
-            className="text-signal absolute inset-0 flex items-center text-[14px] font-medium"
+            className="text-jollof absolute inset-0 flex items-center text-[14px] font-medium"
           >
             Checked against {copy.compared} similar apps · {copy.missing.length}{" "}
             screens missing
@@ -265,7 +265,7 @@ export default function WayframeScene({ register }: SceneProps) {
         </div>
         <span
           data-generate
-          className="bg-bone text-ink absolute top-1/2 right-3 grid h-[34px] -translate-y-1/2 place-items-center rounded-[8px] px-3.5 text-[12px] font-medium"
+          className="bg-ink text-paper absolute top-1/2 right-3 grid h-[34px] -translate-y-1/2 place-items-center rounded-[8px] px-3.5 text-[12px] font-medium"
         >
           Generate
         </span>
@@ -314,7 +314,7 @@ export default function WayframeScene({ register }: SceneProps) {
       {/* The pattern check's sweep */}
       <span
         data-scan
-        className="bg-signal pointer-events-none absolute top-[100px] left-[20px] h-[340px] w-[2px] shadow-[0_0_24px_6px_rgba(255,74,28,0.45)]"
+        className="bg-jollof pointer-events-none absolute top-[100px] left-[20px] h-[340px] w-[2px] shadow-[0_0_24px_6px_rgba(255,74,28,0.45)]"
       />
 
       <Pointer />

@@ -3,7 +3,7 @@ import type { gsap } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
 
 /**
- * The small vocabulary every scene is built from, so the six read as one set:
+ * The small vocabulary every scene is built from, so they all read as one set:
  * the same panel surface, the same pointer, the same press and the same way a
  * number counts.
  */
@@ -13,7 +13,7 @@ export function Panel({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "border-bone-faint absolute rounded-[14px] border bg-[#161514] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]",
+        "border-ink-faint absolute rounded-[14px] border bg-[#161514] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]",
         className,
       )}
       {...rest}
@@ -24,11 +24,11 @@ export function Panel({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
 /** Browser chrome: three dots and an address. */
 export function Chrome({ url }: { url: string }) {
   return (
-    <div className="border-bone-faint flex h-[30px] items-center gap-1.5 border-b px-3">
-      <span className="bg-bone-faint h-2 w-2 rounded-full" />
-      <span className="bg-bone-faint h-2 w-2 rounded-full" />
-      <span className="bg-bone-faint h-2 w-2 rounded-full" />
-      <span className="label text-bone-muted mx-auto text-[9px]">{url}</span>
+    <div className="border-ink-faint flex h-[30px] items-center gap-1.5 border-b px-3">
+      <span className="bg-ink-faint h-2 w-2 rounded-full" />
+      <span className="bg-ink-faint h-2 w-2 rounded-full" />
+      <span className="bg-ink-faint h-2 w-2 rounded-full" />
+      <span className="label text-ink-muted mx-auto text-[9px]">{url}</span>
     </div>
   );
 }
@@ -38,7 +38,7 @@ export function Pointer() {
   return (
     <span
       data-cursor
-      className="border-ink bg-bone pointer-events-none absolute top-0 left-0 z-20 block h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
+      className="border-paper bg-ink pointer-events-none absolute top-0 left-0 z-20 block h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
     />
   );
 }

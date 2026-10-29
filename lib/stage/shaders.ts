@@ -86,18 +86,25 @@ mat3 rotX(float a){float c=cos(a),s=sin(a);return mat3(1.,0.,0., 0.,c,s, 0.,-s,c
 // Per-shape idle motion. Applied in the shape's own space, before its centre.
 vec3 animate(vec3 p, float mode, float t){
   if (mode > 0.5 && mode < 1.5) {
-    // spin — the knot turns slowly and nods.
-    p = rotX(0.5 + sin(t * 0.13) * 0.18) * rotY(t * 0.16) * p;
-    p += snoise3(p * 0.006 + t * 0.12) * 6.0 * uMotion;
+    // turn — type that leans toward you and back, just enough to show depth.
+    p = rotX(sin(t * 0.21) * 0.08 * uMotion) * rotY(sin(t * 0.17) * 0.32 * uMotion) * p;
+    p += snoise3(p * 0.008 + t * 0.15) * 3.0 * uMotion;
   } else if (mode > 1.5 && mode < 2.5) {
     // drift — free particles churn on a noise field: restless, never settled.
     p += snoise3(p * 0.0024 + vec3(0., 0., t * 0.11)) * 150.0 * uMotion;
-  } else if (mode > 2.5) {
-    // swell — the sea.
-    float sea = step(p.z, 200.) * step(-3600., p.z) * step(p.y, -10.);
-    p.y += sea * (sin(p.x * 0.0045 + t * 0.7) * 10.0
-         + sin(p.z * 0.006 - t * 0.9) * 14.0
-         + snoise(vec3(p.xz * 0.002, t * 0.15)) * 16.0) * uMotion;
+  } else if (mode > 2.5 && mode < 3.5) {
+    // sway — hung from the top of the shape, like an anchor on its rope.
+    float a = sin(t * 0.55) * 0.07 * uMotion;
+    float c = cos(a), s = sin(a);
+    vec2 q = p.xy - vec2(0.0, 400.0);
+    p.xy = vec2(c * q.x - s * q.y, s * q.x + c * q.y) + vec2(0.0, 400.0);
+  } else if (mode > 3.5) {
+    // table — laid flat (z is height above the table), turning slowly, seen
+    // from across the table.
+    float a = t * 0.09 * uMotion;
+    float c = cos(a), s = sin(a);
+    p.xy = vec2(c * p.x - s * p.y, s * p.x + c * p.y);
+    p = rotX(-1.02) * p;
   }
   return p;
 }
@@ -172,7 +179,7 @@ void main(){
   gl_PointSize = size * uDpr * (uCamZ / -mv.z);
 
   vec4 col = mix(ca, cb, e);
-  col.rgb = mix(col.rgb, vec3(1.0, 0.29, 0.11), glow);
+  col.rgb = mix(col.rgb, vec3(0.72, 0.196, 0.102), glow);
   col.a = max(col.a, glow) * ie;
   col.a *= 1.0 + push * 0.6;
   vCol = col;

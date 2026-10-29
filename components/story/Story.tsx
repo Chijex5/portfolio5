@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import LocalTime from "@/components/shared/LocalTime";
 import { chapter } from "@/lib/chapter";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 import { intro } from "@/lib/intro";
@@ -14,16 +13,16 @@ import ProjectChapter from "@/components/work/ProjectChapter";
 import { SCENES } from "@/components/work/scenes";
 
 /**
- * The home page: one story told in eight beats, drawn by the particle stage.
+ * The home page: CJ's story told in eight beats, drawn by the particle stage.
  *
- *   hero     a knot           — every product starts as an annoyance
- *   noise    it comes undone  — the annoyances themselves
- *   shape    a schema         — first, the data
- *   flow     a live graph     — then the wiring
- *   surface  browser + phone  — then the part people touch
- *   proof    six scenes       — what came out of it, each acted out
- *   me       a Lagos sunset   — who
- *   hello    "Say hello."     — the ask
+ *   hero     "CJ."             — who
+ *   navy     an anchor         — the first plan
+ *   jss2     <h1>, h1 to h6    — the textbook, Notepad, the feeling
+ *   bribe    jollof + chicken  — how Computer Science became Statistics
+ *   stats    a Galton board    — maths, done in his head
+ *   build    a live graph      — the building stuck
+ *   proof    seven scenes      — what came out of it, each acted out
+ *   hello    "Say hello."      — the ask
  *
  * Each chapter is a tall section with a sticky, screen-high inner. Scrolling
  * into a section morphs the stage from the previous chapter's shape to this one;
@@ -43,15 +42,15 @@ type Beat = {
 };
 
 const BEATS: readonly Beat[] = [
-  { id: "top", shape: "knot", index: "00", label: "Intro", vh: 1 },
-  { id: "noise", shape: "noise", index: "01", label: "Noise", vh: 2.3 },
-  { id: "shape", shape: "schema", index: "02", label: "Shape", vh: 1.8 },
-  { id: "flow", shape: "flow", index: "03", label: "Flow", vh: 1.8 },
-  { id: "surface", shape: "surface", index: "04", label: "Surface", vh: 1.8 },
+  { id: "top", shape: "cj", index: "00", label: "CJ", vh: 1 },
+  { id: "navy", shape: "anchor", index: "01", label: "The Navy", vh: 1.8 },
+  { id: "jss2", shape: "tag", index: "02", label: "JSS2", vh: 2.3 },
+  { id: "bribe", shape: "plate", index: "03", label: "The bribe", vh: 2.4 },
+  { id: "stats", shape: "bell", index: "04", label: "Statistics", vh: 1.8 },
+  { id: "build", shape: "flow", index: "05", label: "Still building", vh: 1.8 },
   // The projects carry this chapter themselves; the stage drops to a quiet
   // field behind them. Its height is the sum of the project chapters.
-  { id: "work", shape: "field", index: "05", label: "Proof", vh: 0 },
-  { id: "me", shape: "calm", index: "06", label: "Me", vh: 1.8 },
+  { id: "work", shape: "field", index: "06", label: "Proof", vh: 0 },
   { id: "contact", shape: "hello", index: "07", label: "Hello", vh: 1.6 },
 ];
 
@@ -92,7 +91,7 @@ export default function Story() {
         while (i > 0 && y < tops[i] - vh) i--;
 
         if (i === 0) {
-          stage.set("knot", "knot", 1);
+          stage.set("cj", "cj", 1);
         } else {
           const prev = BEATS[i - 1];
           const beat = BEATS[i];
@@ -238,27 +237,29 @@ export default function Story() {
         });
       });
 
-      // Noise: the annoyances pile up one at a time as you hold in the chapter.
-      const noise = sections[1];
-      gsap.utils
-        .toArray<HTMLElement>("[data-annoyance]", noise)
-        .forEach((t, i) => {
-          gsap.fromTo(
-            t,
-            { yPercent: 110 },
-            {
-              yPercent: 0,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: noise,
-                start: () =>
-                  `top+=${window.innerHeight * (i * 0.32 - 0.55)} top`,
-                end: () => `top+=${window.innerHeight * (i * 0.32 - 0.3)} top`,
-                scrub: 0.6,
+      // Lines that pile up one at a time as you hold in a chapter.
+      sections.forEach((section) => {
+        gsap.utils
+          .toArray<HTMLElement>("[data-pile]", section)
+          .forEach((t, i) => {
+            gsap.fromTo(
+              t,
+              { yPercent: 110 },
+              {
+                yPercent: 0,
+                ease: "power2.out",
+                scrollTrigger: {
+                  trigger: section,
+                  start: () =>
+                    `top+=${window.innerHeight * (i * 0.32 - 0.55)} top`,
+                  end: () =>
+                    `top+=${window.innerHeight * (i * 0.32 - 0.3)} top`,
+                  scrub: 0.6,
+                },
               },
-            },
-          );
-        });
+            );
+          });
+      });
 
       return () => {
         offIntro();
@@ -303,84 +304,107 @@ export default function Story() {
           <p
             data-intro
             data-hero-bit
-            className="label text-bone-muted mb-6 md:mb-8"
+            className="label text-ink-muted mb-6 md:mb-8"
           >
-            {CONTACT.name} <span className="text-signal">/</span> {CONTACT.role}
+            {CONTACT.name} <span className="text-jollof">/</span> {CONTACT.role}
           </p>
           <h1
             data-intro
             data-hero-title
-            className="display max-w-[14ch] text-[clamp(2.9rem,7.6vw,9.5rem)] md:max-w-[17ch]"
+            className="display max-w-[11ch] text-[clamp(3.2rem,7.2vw,9rem)] md:max-w-[12ch]"
           >
-            Every product I&rsquo;ve built started as an{" "}
-            <em className="turn">annoyance.</em>
+            I build things that make people ask{" "}
+            <em className="turn">who made this?</em>
           </h1>
         </div>
         <p
           data-intro
           data-hero-bit
-          className="label text-bone-muted absolute right-4 bottom-20 hidden items-center gap-3 md:right-10 md:bottom-24 md:flex"
+          className="label text-ink-muted absolute right-4 bottom-20 hidden items-center gap-3 md:right-10 md:bottom-24 md:flex"
         >
-          Scroll to untangle
-          <span className="bg-bone-faint relative block h-8 w-px overflow-hidden">
-            <span className="bg-signal absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
+          Scroll for the story
+          <span className="bg-ink-faint relative block h-8 w-px overflow-hidden">
+            <span className="bg-jollof absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
           </span>
         </p>
       </section>
 
-      {/* 01 — Noise --------------------------------------------------------- */}
-      <Chapter id="noise" vh={BEATS[1].vh}>
-        <Eyebrow index="01" label="Noise" />
-        <h2 className="sr-only">What I keep running into</h2>
-        <ul className="display space-y-[0.12em] text-[clamp(2rem,4.4vw,5.25rem)] md:w-[60vw]">
-          {[
-            "A job hunt across five boards.",
-            "A wedding with a deadline.",
-            "Screens I forgot to design.",
-          ].map((t) => (
-            <li key={t} className="line-mask">
-              <span data-annoyance className="block">
-                {t}
-              </span>
-            </li>
-          ))}
+      {/* 01 — The Navy ------------------------------------------------------ */}
+      <Chapter id="navy" vh={BEATS[1].vh}>
+        <Eyebrow index="01" label="The Navy" />
+        <h2 data-reveal className="display text-[clamp(2.8rem,7vw,8rem)]">
+          Primary-school plan: the <em className="turn">Navy.</em>
+        </h2>
+        <p data-fade className="label text-ink-muted mt-6">
+          Got as far as military boarding school. Always hungry.
+        </p>
+      </Chapter>
+
+      {/* 02 — JSS2 ---------------------------------------------------------- */}
+      <Chapter id="jss2" vh={BEATS[2].vh}>
+        <Eyebrow index="02" label="JSS2" />
+        <h2 className="sr-only">How it started</h2>
+        <ul className="display space-y-[0.08em] text-[clamp(2.4rem,5.4vw,6.5rem)]">
+          <li className="line-mask">
+            <span data-pile className="block">
+              One HTML textbook.
+            </span>
+          </li>
+          <li className="line-mask">
+            <span data-pile className="block">
+              Notepad. A single{" "}
+              <code className="text-jollof font-mono text-[0.72em] font-normal tracking-[-0.04em]">
+                &lt;h1&gt;
+              </code>
+            </span>
+          </li>
+          <li className="line-mask">
+            <span data-pile className="block">
+              I felt like a <em className="turn">god.</em>
+            </span>
+          </li>
         </ul>
-      </Chapter>
-
-      {/* 02 — Shape --------------------------------------------------------- */}
-      <Chapter id="shape" vh={BEATS[2].vh}>
-        <Eyebrow index="02" label="Shape" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          So I give it <em className="turn">shape.</em>
-        </h2>
-        <p data-fade className="label text-bone-muted mt-6">
-          Schema first — tables, keys, relations.
+        <p data-fade className="label text-ink-muted mt-6">
+          Never figured out CSS that term. Still chasing that feeling.
         </p>
       </Chapter>
 
-      {/* 03 — Flow ---------------------------------------------------------- */}
-      <Chapter id="flow" vh={BEATS[3].vh}>
-        <Eyebrow index="03" label="Flow" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          Then I wire it <em className="turn">up.</em>
+      {/* 03 — The bribe ----------------------------------------------------- */}
+      <Chapter id="bribe" vh={BEATS[3].vh}>
+        <Eyebrow index="03" label="The bribe" />
+        <h2 data-reveal className="display text-[clamp(2.6rem,6.2vw,7.25rem)]">
+          I wanted Computer Science. Then Mum visited with{" "}
+          <em className="turn">jollof.</em>
         </h2>
-        <p data-fade className="label text-bone-muted mt-6">
-          APIs, payments, queues, email.
+        <p data-fade className="label text-ink-muted mt-6 max-w-[46ch]">
+          Six big pieces of chicken. A lot of plantain. I said{" "}
+          <span className="text-ink">&ldquo;yes ma.&rdquo;</span>
         </p>
       </Chapter>
 
-      {/* 04 — Surface ------------------------------------------------------- */}
-      <Chapter id="surface" vh={BEATS[4].vh}>
-        <Eyebrow index="04" label="Surface" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          And make it feel <em className="turn">obvious.</em>
+      {/* 04 — Statistics ---------------------------------------------------- */}
+      <Chapter id="stats" vh={BEATS[4].vh}>
+        <Eyebrow index="04" label="Statistics" />
+        <h2 data-reveal className="display text-[clamp(2.8rem,7vw,8rem)]">
+          So: <em className="turn">Statistics.</em>
         </h2>
-        <p data-fade className="label text-bone-muted mt-6">
-          Web and mobile, React to React Native.
+        <p data-fade className="label text-ink-muted mt-6">
+          I do the maths in my head. Slowly, but correctly.
         </p>
       </Chapter>
 
-      {/* 05 — Proof: each project acts itself out ------------------------ */}
+      {/* 05 — Still building ------------------------------------------------ */}
+      <Chapter id="build" vh={BEATS[5].vh}>
+        <Eyebrow index="05" label="Still building" />
+        <h2 data-reveal className="display text-[clamp(2.6rem,6.4vw,7.5rem)]">
+          The AI plan never stuck. The <em className="turn">building</em> did.
+        </h2>
+        <p data-fade className="label text-ink-muted mt-6">
+          Schema, API, interface — React, Next.js, TypeScript, Python, Postgres.
+        </p>
+      </Chapter>
+
+      {/* 06 — Proof: each project acts itself out ------------------------ */}
       <section id="work" className="relative">
         <h2 className="sr-only">Selected work</h2>
         {projects.map((p, i) => {
@@ -399,29 +423,6 @@ export default function Story() {
         })}
       </section>
 
-      {/* 06 — Me ------------------------------------------------------------ */}
-      <Chapter id="me" vh={BEATS[6].vh} top>
-        <Eyebrow index="06" label="Me" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          I&rsquo;m <em className="turn">Chijioke.</em>
-        </h2>
-        <dl
-          data-fade
-          className="label mt-8 grid max-w-xl grid-cols-[auto_1fr] gap-x-8 gap-y-3 md:mt-10"
-        >
-          <dt className="text-bone-muted">Based</dt>
-          <dd>
-            {CONTACT.location}, <LocalTime />
-          </dd>
-          <dt className="text-bone-muted">Now</dt>
-          <dd>{CONTACT.current}</dd>
-          <dt className="text-bone-muted">Studied</dt>
-          <dd>{CONTACT.studied}</dd>
-          <dt className="text-bone-muted">Stack</dt>
-          <dd>React · Next.js · TypeScript · Python · Postgres</dd>
-        </dl>
-      </Chapter>
-
       {/* 07 — Hello --------------------------------------------------------- */}
       <section
         id="contact"
@@ -431,6 +432,9 @@ export default function Story() {
         <div className="sticky top-0 flex h-svh flex-col justify-end px-4 pb-20 md:px-10 md:pb-24">
           <h2 className="sr-only">Say hello</h2>
           <div className="flex flex-col items-center text-center">
+            <p data-fade className="label text-ink-muted mb-6 max-w-[40ch]">
+              {CONTACT.status}
+            </p>
             <a
               data-fade
               href={`mailto:${CONTACT.email}`}
@@ -438,7 +442,7 @@ export default function Story() {
               className="group relative text-[clamp(1.35rem,3.4vw,3.25rem)] tracking-[-0.03em]"
             >
               {CONTACT.email}
-              <span className="bg-signal absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-x-100" />
+              <span className="bg-jollof absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-x-100" />
             </a>
             <ul
               data-fade
@@ -450,7 +454,7 @@ export default function Story() {
                     href={s.href}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="hover:text-signal transition-colors"
+                    className="hover:text-jollof transition-colors"
                   >
                     {s.label} ↗
                   </a>
@@ -461,14 +465,14 @@ export default function Story() {
                   href={CONTACT.writing}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="hover:text-signal transition-colors"
+                  className="hover:text-jollof transition-colors"
                 >
                   Writing ↗
                 </a>
               </li>
             </ul>
           </div>
-          <p className="label text-bone-muted mt-14 hidden justify-center md:flex">
+          <p className="label text-ink-muted mt-14 hidden justify-center md:flex">
             © {new Date().getFullYear()} {CONTACT.name}
           </p>
         </div>
@@ -497,7 +501,7 @@ function Chapter({
           className={
             top
               ? "absolute inset-x-4 top-24 md:inset-x-10 md:top-32"
-              : "absolute inset-x-4 bottom-20 md:inset-x-10 md:bottom-24 md:max-w-[52vw]"
+              : "absolute inset-x-4 bottom-20 md:inset-x-10 md:bottom-24 md:max-w-[44vw]"
           }
         >
           {children}
@@ -518,9 +522,9 @@ function Eyebrow({
 }) {
   return (
     <p data-fade className="label mb-5 flex items-center md:mb-7">
-      <span className="text-signal">({index})</span>
-      <span className="bg-bone-faint mx-3 h-px w-8" />
-      <span className="text-bone-muted">{label}</span>
+      <span className="text-jollof">({index})</span>
+      <span className="bg-ink-faint mx-3 h-px w-8" />
+      <span className="text-ink-muted">{label}</span>
       {children}
     </p>
   );

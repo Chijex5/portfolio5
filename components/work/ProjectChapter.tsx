@@ -110,9 +110,9 @@ export default function ProjectChapter({
 
         <div className="row-start-2 flex flex-col justify-end md:col-span-5 md:col-start-1 md:row-start-1">
           <p className="label mb-4 flex items-center md:mb-6">
-            <span className="text-signal">(05)</span>
-            <span className="bg-bone-faint mx-3 h-px w-8" />
-            <span className="text-bone-muted">
+            <span className="text-jollof">(06)</span>
+            <span className="bg-ink-faint mx-3 h-px w-8" />
+            <span className="text-ink-muted">
               {String(index + 1).padStart(2, "0")} /{" "}
               {String(total).padStart(2, "0")}
             </span>
@@ -129,13 +129,13 @@ export default function ProjectChapter({
               {project.title}
             </Link>
           </h2>
-          <p className="text-bone-muted mt-3 max-w-[30ch] text-[clamp(1rem,1.3vw,1.2rem)] leading-snug tracking-[-0.01em] md:mt-4">
+          <p className="text-ink-muted mt-3 max-w-[30ch] text-[clamp(1rem,1.3vw,1.2rem)] leading-snug tracking-[-0.01em] md:mt-4">
             {project.line}
           </p>
 
-          <div className="border-bone-faint mt-6 border-t pt-5 md:mt-10 md:pt-6">
-            <p className="label text-bone-muted flex items-center gap-3">
-              <span className="text-bone tabular-nums">
+          <div className="border-ink-faint mt-6 border-t pt-5 md:mt-10 md:pt-6">
+            <p className="label text-ink-muted flex items-center gap-3">
+              <span className="text-ink tabular-nums">
                 <span data-step-count>01</span> /{" "}
                 {String(steps.length).padStart(2, "0")}
               </span>
@@ -151,7 +151,7 @@ export default function ProjectChapter({
                   <p className="text-[clamp(1.3rem,1.9vw,1.8rem)] font-medium tracking-[-0.03em]">
                     {s.title}
                   </p>
-                  <p className="text-bone-muted mt-1.5 max-w-[42ch] text-[0.95rem] leading-snug">
+                  <p className="text-ink-muted mt-1.5 max-w-[42ch] text-[0.95rem] leading-snug">
                     {s.body}
                   </p>
                 </li>

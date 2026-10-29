@@ -133,7 +133,7 @@ export default function Cursor() {
     <div
       ref={dot}
       aria-hidden="true"
-      className="bg-bone pointer-events-none fixed top-0 left-0 z-[100] flex h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full opacity-0 mix-blend-difference"
+      className="bg-paper pointer-events-none fixed top-0 left-0 z-[100] flex h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full opacity-0 mix-blend-difference"
     >
       <span
         ref={label}

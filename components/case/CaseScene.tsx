@@ -99,12 +99,12 @@ export default function CaseScene({
           <li
             key={s.title}
             data-step-item
-            className="text-bone-muted data-[active]:text-bone transition-colors duration-500"
+            className="text-ink-muted data-[active]:text-ink transition-colors duration-500"
           >
-            <span className="bg-bone-faint block h-px overflow-hidden">
+            <span className="bg-ink-faint block h-px overflow-hidden">
               <span
                 data-step-bar
-                className="bg-signal block h-full w-full origin-left"
+                className="bg-jollof block h-full w-full origin-left"
                 style={{ transform: "scaleX(0)" }}
               />
             </span>

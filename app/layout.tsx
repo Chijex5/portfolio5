@@ -1,9 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Instrument_Serif,
-  Inter_Tight,
-  JetBrains_Mono,
-} from "next/font/google";
+import { Anybody, DM_Mono, Instrument_Serif } from "next/font/google";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import Cursor from "@/components/shell/Cursor";
 import Hud from "@/components/shell/Hud";
@@ -11,25 +7,30 @@ import Preloader from "@/components/shell/Preloader";
 import StageCanvas from "@/components/shell/StageCanvas";
 import "./globals.css";
 
-// The display face. The particle stage also sets "Say hello." in it, reading the
-// family back from this variable (lib/stage/stage.ts), so keep the name in step.
-const display = Inter_Tight({
+// The display face: one variable family whose width axis does the work — set
+// condensed for headlines, let out wide for the turn word. The particle stage
+// also sets "CJ" and "Say hello." in it, reading the family back from this
+// variable (lib/stage/stage.ts), so keep the name in step.
+const display = Anybody({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "variable",
+  style: ["normal", "italic"],
+  axes: ["wdth"],
   variable: "--font-display-family",
   display: "swap",
 });
 
-// One italic word per chapter — the turn.
+// Only the wedding scene's invitation uses it — it is that product's face.
 const serif = Instrument_Serif({
   subsets: ["latin"],
   weight: "400",
   style: ["italic"],
   variable: "--font-serif-family",
   display: "swap",
+  preload: false,
 });
 
-const mono = JetBrains_Mono({
+const mono = DM_Mono({
   subsets: ["latin"],
   weight: ["400"],
   variable: "--font-mono-family",
@@ -46,7 +47,7 @@ const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
   : "http://localhost:3000";
 
 const DESCRIPTION =
-  "Chijioke Uzodinma is a full-stack developer in Lagos. Every product he has built started as an annoyance — this is how they get untangled.";
+  "Chijioke Uzodinma (CJ) is a full-stack developer. Wanted the Navy, found HTML in JSS2, got talked into Statistics with a plate of jollof — and kept building anyway.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -77,8 +78,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
-  colorScheme: "dark",
+  themeColor: "#f3eadb",
+  colorScheme: "light",
 };
 
 export default function RootLayout({
@@ -103,7 +104,7 @@ export default function RootLayout({
       <body className="min-h-dvh">
         <a
           href="#main"
-          className="label bg-signal text-ink fixed top-2 left-2 z-[110] -translate-y-24 px-3 py-2 focus:translate-y-0"
+          className="label bg-jollof text-paper fixed top-2 left-2 z-[110] -translate-y-24 px-3 py-2 focus:translate-y-0"
         >
           Skip to content
         </a>

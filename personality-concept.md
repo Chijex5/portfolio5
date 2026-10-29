@@ -19,16 +19,16 @@ remembers the jollof.
 
 ## The script
 
-| #   | Beat           | Particles become                       | Copy (draft)                                                                                                         |
-| --- | -------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 00  | CJ             | the letters **CJ**                     | "CJ. I build things that make people ask _who made this?_"                                                          |
-| 01  | The Navy       | an anchor                              | "Primary-school plan: the Navy. Got as far as military boarding school."                                            |
+| #   | Beat           | Particles become                       | Copy (draft)                                                                                                                                      |
+| --- | -------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 00  | CJ             | the letters **CJ**                     | "CJ. I build things that make people ask _who made this?_"                                                                                        |
+| 01  | The Navy       | an anchor                              | "Primary-school plan: the Navy. Got as far as military boarding school."                                                                          |
 | 02  | JSS2           | an `<h1>` tag / open textbook          | "JSS2. One HTML textbook, Notepad, a single `<h1>`. I felt like a god. Still chasing that." (a raw, unstyled HTML moment flashes, then dissolves) |
-| 03  | The bribe      | a plate: jollof, six chicken, plantain | "I wanted Computer Science. Then my mum visited with jollof, six pieces of chicken and a lot of plantain. I said _yes ma._" |
-| 04  | Statistics     | dots falling into a bell curve         | "So: Statistics. I do the maths in my head. Slowly, but correctly."                                                 |
-| 05  | Still building | schema → flow → surface, compressed    | "The AI plan never stuck. The building did."                                                                        |
-| 06  | Proof          | quiet field behind project scenes      | Riseclassroom first, then D'Footprint, Jobless, Wayframe, PicPress, Precious & Emmanuel, VoltIq                     |
-| 07  | Hello          | "Say hello."                           | "Signed out of UNN, 2026. Hiring, or building something? Both work."                                                |
+| 03  | The bribe      | a plate: jollof, six chicken, plantain | "I wanted Computer Science. Then my mum visited with jollof, six pieces of chicken and a lot of plantain. I said _yes ma._"                       |
+| 04  | Statistics     | dots falling into a bell curve         | "So: Statistics. I do the maths in my head. Slowly, but correctly."                                                                               |
+| 05  | Still building | schema → flow → surface, compressed    | "The AI plan never stuck. The building did."                                                                                                      |
+| 06  | Proof          | quiet field behind project scenes      | Riseclassroom first, then D'Footprint, Jobless, Wayframe, PicPress, Precious & Emmanuel, VoltIq                                                   |
+| 07  | Hello          | "Say hello."                           | "Signed out of UNN, 2026. Hiring, or building something? Both work."                                                                              |
 
 ### Riseclassroom (lead project)
 
@@ -45,12 +45,12 @@ Live: https://rise-classroom-frontend.netlify.app/ (moving to a custom domain / 
 The current dark ink + single orange accent + serif italic is the default
 award-site look right now. Proposed instead — warm, light, printed:
 
-| Token     | Value     | Role                           |
-| --------- | --------- | ------------------------------ |
-| paper     | `#F3EADB` | background (rice-cream)        |
-| ink       | `#1A120D` | type, most particles           |
-| jollof    | `#B8321A` | accent                         |
-| plantain  | `#E9A93B` | second accent, sparingly       |
+| Token    | Value     | Role                     |
+| -------- | --------- | ------------------------ |
+| paper    | `#F3EADB` | background (rice-cream)  |
+| ink      | `#1A120D` | type, most particles     |
+| jollof   | `#B8321A` | accent                   |
+| plantain | `#E9A93B` | second accent, sparingly |
 
 - Paper grain over everything; particles read as ink and pigment on paper.
 - A bold, slightly odd display face (not Inter / Geist / the usual serif italic).
@@ -67,7 +67,8 @@ award-site look right now. Proposed instead — warm, light, printed:
 - Music / sound — dropped.
 - Photos, voice notes.
 
-## Open decisions
+## Decisions
 
-1. Light "jollof paper" palette, or stay dark with new accents?
-2. Which contact email is current?
+1. Light "jollof paper" palette — yes.
+2. Contact email — `embroconnect3@gmail.com`.
+3. Display face — Anybody (variable width): condensed for headlines, wide italic for the jollof turn word. DM Mono for labels.

@@ -16,7 +16,7 @@ const GIVE_UP = 7;
 /**
  * The opening. A counter that follows the stage's real loading progress
  * (pictures sampled, type loaded, shapes built), then a wipe upward that hands
- * the screen to the particles, which fly out of a single point into the knot.
+ * the screen to the particles, which fly out of a single point into "CJ."
  */
 export default function Preloader() {
   const root = useRef<HTMLDivElement>(null);
@@ -128,10 +128,10 @@ export default function Preloader() {
     <div
       ref={root}
       aria-hidden="true"
-      className="preloader bg-ink text-bone fixed inset-0 z-[90] flex-col justify-between p-4 md:p-10"
+      className="preloader bg-paper text-ink fixed inset-0 z-[90] flex-col justify-between p-4 md:p-10"
       style={{ clipPath: "inset(0% 0% 0% 0%)" }}
     >
-      <div className="label text-bone-muted flex justify-between">
+      <div className="label text-ink-muted flex justify-between">
         <span className="block overflow-clip">
           <span data-pl-out className="block">
             Chijioke Uzodinma
@@ -168,16 +168,16 @@ export default function Preloader() {
             ))}
           </span>
         </span>
-        <div className="label text-bone-muted mb-[1.2em] hidden w-56 md:block">
+        <div className="label text-ink-muted mb-[1.2em] hidden w-56 md:block">
           <span className="block overflow-clip">
             <span data-pl-out className="block">
               Untangling
             </span>
           </span>
-          <span className="bg-bone-faint mt-3 block h-px w-full overflow-hidden">
+          <span className="bg-ink-faint mt-3 block h-px w-full overflow-hidden">
             <span
               ref={bar}
-              className="bg-signal block h-full w-full origin-left scale-x-0"
+              className="bg-jollof block h-full w-full origin-left scale-x-0"
             />
           </span>
         </div>

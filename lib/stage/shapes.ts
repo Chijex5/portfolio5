@@ -24,7 +24,7 @@ export type ShapeData = {
   center: [number, number, number];
   /** Point size in CSS px. */
   size: number;
-  /** 0 still · 1 spin · 2 drift · 3 swell. Mirrors `animate()` in the shader. */
+  /** 0 still · 1 turn · 2 drift · 3 sway · 4 table. Mirrors `animate()` in the shader. */
   mode: number;
   /** How strongly the shader pulses along `flow` paths, 0–1. */
   pulse: number;
@@ -32,11 +32,25 @@ export type ShapeData = {
 
 type RGBA = readonly [number, number, number, number];
 
-export const BONE: RGBA = [237, 232, 223, 235];
-export const SIGNAL: RGBA = [255, 74, 28, 255];
-const DIM: RGBA = [237, 232, 223, 150];
-const FAINT: RGBA = [237, 232, 223, 84];
-const DUST: RGBA = [237, 232, 223, 34];
+// Printed on paper: ink, jollof, plantain, and the browns in between. Alpha is
+// how heavily a dot is inked, not how brightly it glows.
+export const INK: RGBA = [26, 18, 13, 235];
+export const JOLLOF: RGBA = [184, 50, 26, 245];
+const DIM: RGBA = [26, 18, 13, 140];
+const FAINT: RGBA = [26, 18, 13, 70];
+const DUST: RGBA = [26, 18, 13, 30];
+const PLANTAIN: RGBA = [233, 169, 59, 250];
+const RICE: readonly RGBA[] = [
+  [184, 50, 26, 240],
+  [205, 82, 34, 235],
+  [214, 108, 44, 225],
+  [150, 38, 20, 240],
+];
+const CHICKEN: readonly RGBA[] = [
+  [86, 40, 16, 250],
+  [112, 56, 22, 245],
+  [60, 28, 12, 250],
+];
 
 /** mulberry32 — small, fast, good enough to scatter dots. */
 export function rng(seed: number) {
@@ -120,7 +134,31 @@ type Prim =
       dash?: number;
     }
   | { k: "ring"; x: number; y: number; r: number; c: RGBA }
-  | { k: "disc"; x: number; y: number; r: number; c: RGBA };
+  | { k: "disc"; x: number; y: number; r: number; c: RGBA }
+  /** Part of a ring, from angle `a0` to `a1` (radians, counter-clockwise). */
+  | {
+      k: "arc";
+      x: number;
+      y: number;
+      r: number;
+      a0: number;
+      a1: number;
+      c: RGBA;
+      path?: number;
+    }
+  /** A filled ellipse turned by `rot`; `z` lifts it off the page. */
+  | {
+      k: "blob";
+      x: number;
+      y: number;
+      rx: number;
+      ry: number;
+      rot: number;
+      z?: number;
+      /** How high the middle rises, as a share of the smaller radius. */
+      dome?: number;
+      c: RGBA | readonly RGBA[];
+    };
 
 /** Stroke weight lines and rings are budgeted at, in px. */
 const STROKE = 2.2;
@@ -135,17 +173,11 @@ function weight(p: Prim) {
       return Math.PI * 2 * p.r * STROKE;
     case "disc":
       return Math.PI * p.r * p.r;
+    case "arc":
+      return Math.abs(p.a1 - p.a0) * p.r * STROKE;
+    case "blob":
+      return Math.PI * p.rx * p.ry;
   }
-}
-
-/** Outline of a rect as four lines. */
-function frame(x: number, y: number, w: number, h: number, c: RGBA): Prim[] {
-  return [
-    { k: "line", x1: x, y1: y, x2: x + w, y2: y, c },
-    { k: "line", x1: x + w, y1: y, x2: x + w, y2: y - h, c },
-    { k: "line", x1: x + w, y1: y - h, x2: x, y2: y - h, c },
-    { k: "line", x1: x, y1: y - h, x2: x, y2: y, c },
-  ];
 }
 
 /**
@@ -197,7 +229,7 @@ function draw(
         const a = r() * Math.PI * 2;
         const rr = p.r + (r() - 0.5) * STROKE;
         put(s, i, p.x + Math.cos(a) * rr, p.y + Math.sin(a) * rr, z, p.c);
-      } else {
+      } else if (p.k === "disc") {
         const a = r() * Math.PI * 2;
         const rr = Math.sqrt(r()) * p.r;
         put(
@@ -208,6 +240,39 @@ function draw(
           z,
           p.c,
         );
+      } else if (p.k === "arc") {
+        const t = r();
+        const a = p.a0 + (p.a1 - p.a0) * t;
+        const rr = p.r + (r() - 0.5) * STROKE;
+        put(
+          s,
+          i,
+          p.x + Math.cos(a) * rr,
+          p.y + Math.sin(a) * rr,
+          z,
+          p.c,
+          p.path === undefined ? -1 : p.path + Math.min(t, 0.999),
+        );
+      } else {
+        // Unsnapped and domed: food is not a dot matrix.
+        const a = r() * Math.PI * 2;
+        const u = Math.sqrt(r());
+        const lx = Math.cos(a) * u * p.rx;
+        const ly = Math.sin(a) * u * p.ry;
+        const cr = Math.cos(p.rot);
+        const sr = Math.sin(p.rot);
+        const c = Array.isArray(p.c[0])
+          ? (p.c as readonly RGBA[])[Math.floor(r() * p.c.length)]
+          : (p.c as RGBA);
+        put(
+          s,
+          i,
+          p.x + lx * cr - ly * sr,
+          p.y + lx * sr + ly * cr,
+          (p.z ?? 0) +
+            Math.sqrt(1 - u * u) * Math.min(p.rx, p.ry) * (p.dome ?? 0.6),
+          c,
+        );
       }
     }
   });
@@ -215,164 +280,528 @@ function draw(
 }
 
 // ---------------------------------------------------------------------------
-// The beats.
+// Type, sampled into dots.
+// ---------------------------------------------------------------------------
+
+type Run = {
+  text: string;
+  /** A CSS font shorthand, family included. */
+  font: string;
+  /** Baseline, in canvas px from the top. */
+  y: number;
+  /** Left edge; omit to centre the run. */
+  x?: number;
+  /** Index into the palette `typeset` is given. */
+  ink: number;
+};
+
+/**
+ * Set `runs` on a canvas and sample the lit pixels at a step chosen so the
+ * particles land near `budget`. Each run is painted in its own red level, so a
+ * sampled pixel knows which palette entry it belongs to.
+ */
+function typeset(runs: Run[], cw: number, ch: number, budget: number) {
+  const c = document.createElement("canvas");
+  c.width = Math.ceil(cw);
+  c.height = Math.ceil(ch);
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  ctx.textBaseline = "alphabetic";
+  for (const run of runs) {
+    ctx.font = run.font;
+    ctx.fillStyle = `rgb(${255 - run.ink * 50},0,0)`;
+    ctx.textAlign = run.x === undefined ? "center" : "left";
+    ctx.fillText(run.text, run.x ?? c.width / 2, run.y);
+  }
+  const data = ctx.getImageData(0, 0, c.width, c.height).data;
+
+  let lit = 0;
+  for (let k = 3; k < data.length; k += 4 * 2) if (data[k] > 128) lit++;
+  const step = Math.max(2, Math.ceil(Math.sqrt((lit * 2) / budget)));
+
+  const pts: { x: number; y: number; ink: number }[] = [];
+  for (let y = 0; y < c.height; y += step) {
+    for (let x = 0; x < c.width; x += step) {
+      const k = (y * c.width + x) * 4;
+      if (data[k + 3] > 128) {
+        const ink = Math.round((255 - data[k] / (data[k + 3] / 255)) / 50);
+        // Canvas y runs down; the stage's runs up.
+        pts.push({ x: x - c.width / 2, y: c.height / 2 - y, ink });
+      }
+    }
+  }
+  return { pts, step };
+}
+
+/**
+ * Lay sampled type into the particle arrays. Spare particles double up on the
+ * letters (so the type gets darker rather than leaving strays), then the rest
+ * become dust.
+ */
+function inkType(
+  s: { pos: Float32Array; col: Uint8Array },
+  n: number,
+  pts: { x: number; y: number; ink: number }[],
+  palette: readonly RGBA[],
+  step: number,
+  r: () => number,
+  w: number,
+  h: number,
+  /** Thickness: particles spread back through this many px of z. */
+  depth = 6,
+) {
+  // Over budget: thin evenly, never by cutting off the bottom rows.
+  const count = Math.min(pts.length, Math.floor(n * 0.9));
+  const stride = pts.length / count;
+  const kept = Array.from(
+    { length: count },
+    (_, k) => pts[Math.floor(k * stride)],
+  );
+  let i = 0;
+  for (; i < count; i++) {
+    const p = kept[i];
+    put(s, i, p.x, p.y, -r() * depth, palette[p.ink] ?? INK);
+  }
+  const extra = Math.floor((n - i) * 0.6);
+  for (let j = 0; j < extra && count > 0; j++, i++) {
+    const p = kept[Math.floor(r() * count)];
+    put(
+      s,
+      i,
+      p.x + (r() - 0.5) * step,
+      p.y + (r() - 0.5) * step,
+      -r() * depth,
+      palette[p.ink] ?? INK,
+    );
+  }
+  dust(s, i, n, w, h, r);
+}
+
+// ---------------------------------------------------------------------------
+// The beats — CJ's story, in the order it happened.
 // ---------------------------------------------------------------------------
 
 /**
- * Hero — the annoyance. A (2, 5) torus knot with a fuzzy tube: tangled, but
- * clearly *one* thing, so that untangling it is the rest of the page.
+ * Hero — "CJ." set huge in the display face and pressed into a slab of
+ * particles, so it shows its thickness as it turns. The period is jollof.
  */
-export function knot(n: number, w: number, h: number): ShapeData {
+export function cj(n: number, w: number, h: number, family: string): ShapeData {
   const r = rng(11);
   const s = alloc(n);
   const mobile = isMobile(w);
-  const R = mobile ? w * 0.105 : Math.min(w, h) * 0.085;
-  const tube = R * 0.2;
-  const P = 2;
-  const Q = 5;
-  const halo = Math.floor(n * 0.12);
-  for (let i = 0; i < n - halo; i++) {
-    const t = r() * Math.PI * 2;
-    const rad = Math.cos(Q * t) + 2.2;
-    const cx = rad * Math.cos(P * t) * R;
-    const cy = rad * Math.sin(P * t) * R;
-    const cz = -Math.sin(Q * t) * R * 1.1;
-    // A random point in a ball; the tube reads fuzzy rather than piped, which is
-    // what keeps it looking like noise that has *gathered* rather than geometry.
-    const u = Math.pow(r(), 0.7) * tube;
-    const th = r() * Math.PI * 2;
-    const ph = Math.acos(2 * r() - 1);
-    const ox = u * Math.sin(ph) * Math.cos(th);
-    const oy = u * Math.sin(ph) * Math.sin(th);
-    const oz = u * Math.cos(ph);
-    const accent = r() < 0.035;
-    put(
-      s,
-      i,
-      cx + ox,
-      cy + oy,
-      cz + oz,
-      accent ? SIGNAL : BONE,
-      t / (Math.PI * 2),
-    );
-  }
-  // Loose particles orbiting the knot.
-  for (let i = n - halo; i < n; i++) {
-    const a = r() * Math.PI * 2;
-    const rr = R * (2.2 + r() * 2.4);
-    put(
-      s,
-      i,
-      Math.cos(a) * rr,
-      Math.sin(a) * rr * 0.9,
-      (r() - 0.5) * R * 3,
-      FAINT,
-    );
-  }
+  const size = mobile ? w * 0.4 : Math.min(w * 0.36, h * 0.82);
+  const font = `italic 900 ${size}px ${family}`;
+  const cw = size * 1.6;
+  const ch = size * 1.05;
+  const probe = document.createElement("canvas").getContext("2d")!;
+  probe.font = font;
+  const body = probe.measureText("CJ").width;
+  const dot = probe.measureText(".").width;
+  const left = cw / 2 - (body + dot) / 2;
+  const { pts, step } = typeset(
+    [
+      { text: "CJ", font, x: left, y: size * 0.86, ink: 0 },
+      {
+        text: ".",
+        font,
+        x: left + body,
+        y: size * 0.86,
+        ink: 1,
+      },
+    ],
+    cw,
+    ch,
+    n * 0.55,
+  );
+  inkType(s, n, pts, [INK, JOLLOF], step, r, w, h, size * 0.14);
   const box = anchorBox(w, h);
   return {
     ...s,
-    center: [box.cx, mobile ? h * 0.15 : h * 0.11, 0],
-    size: mobile ? 1.6 : 1.9,
+    center: [mobile ? 0 : box.cx + w * 0.04, mobile ? h * 0.16 : h * 0.06, 0],
+    size: Math.max(1.6, step * 0.8),
     mode: 1,
-    pulse: 0.9,
-  };
-}
-
-/** Chapter 1 — noise. The knot comes undone and fills the room. */
-export function noise(n: number, w: number, h: number): ShapeData {
-  const r = rng(23);
-  const s = alloc(n);
-  for (let i = 0; i < n; i++) {
-    const accent = r() < 0.02;
-    put(
-      s,
-      i,
-      (r() - 0.5) * w * 1.15,
-      (r() - 0.5) * h * 1.15,
-      (r() - 0.5) * 500,
-      accent ? SIGNAL : r() < 0.55 ? BONE : DIM,
-    );
-  }
-  return {
-    ...s,
-    center: [0, 0, 0],
-    size: isMobile(w) ? 1.8 : 2.1,
-    mode: 2,
     pulse: 0,
   };
 }
 
 /**
- * Chapter 2 — shape. Three tables and the relations between them: the schema,
- * which is where every build of mine starts.
+ * Chapter 1 — the Navy. An anchor with its rope, swaying over a few strokes of
+ * water: the primary-school plan.
  */
-export function schema(n: number, w: number, h: number): ShapeData {
+export function anchor(n: number, w: number, h: number): ShapeData {
+  const r = rng(23);
+  const s = alloc(n);
+  const b = anchorBox(w, h);
+  const A = Math.min(b.h * 0.92, b.w * 0.9);
+  const top = A * 0.5;
+  const ringR = A * 0.07;
+  const shankTop = top - ringR * 2;
+  const crownY = -A * 0.28;
+  const crownR = A * 0.3;
+  const prims: Prim[] = [];
+
+  prims.push({ k: "ring", x: 0, y: top - ringR, r: ringR, c: INK });
+  prims.push({ k: "ring", x: 0, y: top - ringR, r: ringR * 0.55, c: DIM });
+  // Shank: drawn as three close lines, so it reads heavier than the rope.
+  for (const dx of [-4, 0, 4]) {
+    prims.push({
+      k: "line",
+      x1: dx,
+      y1: shankTop,
+      x2: dx,
+      y2: crownY - crownR + 4,
+      c: INK,
+    });
+  }
+  // Stock, with knobs.
+  const stockY = shankTop - A * 0.08;
+  for (const dy of [-3, 3]) {
+    prims.push({
+      k: "line",
+      x1: -A * 0.2,
+      y1: stockY + dy,
+      x2: A * 0.2,
+      y2: stockY + dy,
+      c: INK,
+    });
+  }
+  prims.push({ k: "disc", x: -A * 0.21, y: stockY, r: A * 0.018, c: INK });
+  prims.push({ k: "disc", x: A * 0.21, y: stockY, r: A * 0.018, c: INK });
+  // Crown: the lower arc, three strokes thick, ending in flukes.
+  for (const dr of [-4, 0, 4]) {
+    prims.push({
+      k: "arc",
+      x: 0,
+      y: crownY,
+      r: crownR + dr,
+      a0: Math.PI * 1.08,
+      a1: Math.PI * 1.92,
+      c: INK,
+    });
+  }
+  for (const side of [-1, 1]) {
+    const a = side < 0 ? Math.PI * 1.08 : Math.PI * 1.92;
+    const fx = Math.cos(a) * crownR;
+    const fy = crownY + Math.sin(a) * crownR;
+    prims.push({
+      k: "blob",
+      x: fx - side * A * 0.01,
+      y: fy + A * 0.035,
+      rx: A * 0.03,
+      ry: A * 0.065,
+      rot: side * 0.5,
+      c: INK,
+    });
+  }
+  prims.push({ k: "disc", x: 0, y: crownY - crownR, r: A * 0.025, c: INK });
+  // The rope: off the ring, loose around the shank, trailing off.
+  const rope: [number, number][] = [];
+  for (let t = 0; t <= 1; t += 0.02) {
+    const y = top - ringR * 2 - t * A * 0.7;
+    const x = Math.sin(t * Math.PI * 3.2) * A * 0.07 * (1 - t * 0.3);
+    rope.push([x, y]);
+  }
+  for (let k = 1; k < rope.length; k++) {
+    prims.push({
+      k: "line",
+      x1: rope[k - 1][0],
+      y1: rope[k - 1][1],
+      x2: rope[k][0],
+      y2: rope[k][1],
+      c: JOLLOF,
+      dash: 3,
+    });
+  }
+  const used = draw(s, prims, Math.floor(n * 0.6), 2, r);
+
+  // Water: long dashed strokes below, fading with distance.
+  const water = Math.floor(n * 0.22);
+  let i = used;
+  for (let k = 0; k < water; k++, i++) {
+    const row = Math.floor(r() * 7);
+    const y = crownY - crownR - A * 0.1 - row * A * 0.045;
+    const x = (r() - 0.5) * b.w * (1.1 + row * 0.12);
+    const wave = Math.sin(x * 0.03 + row) * 3;
+    if (Math.floor((x + row * 17) / 14) % 3 === 0) {
+      k--;
+      i--;
+      continue;
+    }
+    put(s, i, x, y + wave, -row * 30, row < 2 ? DIM : FAINT);
+  }
+  dust(s, i, n, w, h, r, b.cx, b.cy);
+  return { ...s, center: [b.cx, b.cy, 0], size: 1.9, mode: 3, pulse: 0 };
+}
+
+/**
+ * Chapter 2 — JSS2. A jollof `<h1>`, and under it the same heading at every
+ * size from h1 to h6 in Times New Roman: the first page, exactly as the
+ * textbook drew it.
+ */
+export function tag(n: number, w: number, h: number, mono: string): ShapeData {
   const r = rng(37);
+  const s = alloc(n);
+  const b = anchorBox(w, h);
+  const cw = b.w;
+  const ch = b.h * 1.05;
+  const big = Math.min(cw * 0.2, ch * 0.24);
+  const runs: Run[] = [
+    { text: "<h1>", font: `500 ${big}px ${mono}`, x: 0, y: big * 0.9, ink: 1 },
+  ];
+  const sizes = [1, 0.8, 0.64, 0.52, 0.42, 0.34];
+  let y = big * 1.15;
+  const base = Math.min(cw * 0.11, ch * 0.12);
+  sizes.forEach((k) => {
+    y += base * k * 1.08;
+    runs.push({
+      text: "My website",
+      font: `bold ${base * k}px "Times New Roman", Times, serif`,
+      x: 0,
+      y,
+      ink: 0,
+    });
+  });
+  const { pts, step } = typeset(runs, cw, ch, n * 0.62);
+  inkType(s, n, pts, [INK, JOLLOF], step, r, w, h);
+  return {
+    ...s,
+    center: [b.cx, b.cy, 0],
+    size: Math.max(1.6, step * 0.75),
+    mode: 1,
+    pulse: 0,
+  };
+}
+
+/**
+ * Chapter 3 — the bribe. Mum's jollof on a plate, six big pieces of chicken on
+ * top, fried plantain round the edge, turning slowly on the table.
+ */
+export function plate(n: number, w: number, h: number): ShapeData {
+  const r = rng(53);
+  const s = alloc(n);
+  const b = anchorBox(w, h);
+  const mobile = isMobile(w);
+  const R = mobile ? w * 0.42 : Math.min(b.w * 0.44, h * 0.42);
+  const prims: Prim[] = [];
+
+  // The plate: rim, well, and a faint glaze between.
+  prims.push({ k: "ring", x: 0, y: 0, r: R, c: INK });
+  prims.push({ k: "ring", x: 0, y: 0, r: R * 0.985, c: INK });
+  prims.push({ k: "ring", x: 0, y: 0, r: R * 0.96, c: DIM });
+  prims.push({ k: "ring", x: 0, y: 0, r: R * 0.8, c: FAINT });
+
+  // Rice: one mound, and loose grains spilling out of it.
+  prims.push({
+    k: "blob",
+    x: 0,
+    y: 0,
+    rx: R * 0.62,
+    ry: R * 0.62,
+    rot: 0,
+    dome: 0.3,
+    c: RICE,
+  });
+  for (let k = 0; k < 40; k++) {
+    const a = r() * Math.PI * 2;
+    const d = R * (0.55 + r() * 0.12);
+    prims.push({
+      k: "blob",
+      x: Math.cos(a) * d,
+      y: Math.sin(a) * d,
+      rx: R * 0.012,
+      ry: R * 0.005,
+      rot: r() * Math.PI,
+      c: RICE,
+    });
+  }
+
+  // Six pieces of chicken, drumsticks pointing out.
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2 + 0.3;
+    const d = R * 0.3;
+    const cx = Math.cos(a) * d;
+    const cy = Math.sin(a) * d;
+    prims.push({
+      k: "blob",
+      x: cx,
+      y: cy,
+      rx: R * 0.17,
+      ry: R * 0.11,
+      rot: a,
+      // Sitting on the mound, not sunk into it.
+      z: R * 0.17,
+      dome: 0.9,
+      c: CHICKEN,
+    });
+    // The bone and its knuckle.
+    const bx = cx + Math.cos(a) * R * 0.13;
+    const by = cy + Math.sin(a) * R * 0.13;
+    prims.push({
+      k: "blob",
+      x: bx + Math.cos(a) * R * 0.05,
+      y: by + Math.sin(a) * R * 0.05,
+      rx: R * 0.06,
+      ry: R * 0.02,
+      rot: a,
+      z: R * 0.2,
+      c: INK,
+    });
+    prims.push({
+      k: "blob",
+      x: bx + Math.cos(a) * R * 0.11,
+      y: by + Math.sin(a) * R * 0.11,
+      rx: R * 0.028,
+      ry: R * 0.034,
+      rot: a,
+      z: R * 0.2,
+      c: INK,
+    });
+  }
+
+  // Plantain: diagonal slices round the well, browned at the edges.
+  const slices = 13;
+  for (let k = 0; k < slices; k++) {
+    const a = (k / slices) * Math.PI * 2 + r() * 0.15;
+    const d = R * 0.7;
+    const x = Math.cos(a) * d;
+    const y = Math.sin(a) * d;
+    const rot = a + Math.PI / 2 + (r() - 0.5) * 0.6;
+    prims.push({
+      k: "blob",
+      x,
+      y,
+      rx: R * 0.1,
+      ry: R * 0.05,
+      rot,
+      z: R * 0.02,
+      c: [PLANTAIN, PLANTAIN, PLANTAIN, [196, 112, 34, 250]],
+    });
+  }
+
+  const used = draw(s, prims, Math.floor(n * 0.82), 2, r);
+  dust(s, used, n, w, h, r, b.cx, b.cy);
+  return {
+    ...s,
+    center: [mobile ? 0 : b.cx, mobile ? h * 0.12 : b.cy - h * 0.02, 0],
+    size: mobile ? 1.8 : 2.1,
+    mode: 4,
+    pulse: 0,
+  };
+}
+
+/**
+ * Chapter 4 — Statistics. A Galton board: pegs above, and below them the dots
+ * already settled into a binomial, with the bell drawn over it in jollof.
+ */
+export function bell(n: number, w: number, h: number): ShapeData {
+  const r = rng(71);
   const s = alloc(n);
   const b = anchorBox(w, h);
   const W = b.w;
   const H = b.h;
   const prims: Prim[] = [];
+  const bins = 13;
+  const binW = W / bins;
+  const floor = -H * 0.5;
+  const pegTop = H * 0.48;
+  const pegRows = 8;
+  const pegGap = H * 0.042;
 
-  const table = (x: number, y: number, tw: number, rows: number) => {
-    const head = Math.max(12, tw * 0.13);
-    const rowH = Math.max(14, tw * 0.13);
-    const th = head + rows * rowH + rowH * 0.4;
-    prims.push(...frame(x, y, tw, th, DIM));
-    prims.push({ k: "rect", x, y, w: tw, h: head, c: SIGNAL });
-    for (let i = 0; i < rows; i++) {
-      const ry = y - head - rowH * (i + 0.7);
-      const key = i === 0;
+  // Funnel.
+  prims.push({
+    k: "line",
+    x1: -W * 0.16,
+    y1: H * 0.56,
+    x2: -binW * 0.6,
+    y2: pegTop + pegGap,
+    c: DIM,
+  });
+  prims.push({
+    k: "line",
+    x1: W * 0.16,
+    y1: H * 0.56,
+    x2: binW * 0.6,
+    y2: pegTop + pegGap,
+    c: DIM,
+  });
+  // Pegs.
+  for (let row = 0; row < pegRows; row++) {
+    for (let k = 0; k <= row; k++) {
       prims.push({
-        k: "rect",
-        x: x + tw * 0.08,
-        y: ry,
-        w: tw * 0.06,
-        h: rowH * 0.36,
-        c: key ? SIGNAL : FAINT,
-      });
-      prims.push({
-        k: "rect",
-        x: x + tw * 0.2,
-        y: ry,
-        w: tw * (0.28 + r() * 0.42),
-        h: rowH * 0.36,
-        c: BONE,
+        k: "disc",
+        x: (k - row / 2) * binW * 0.9,
+        y: pegTop - row * pegGap,
+        r: 2.6,
+        c: INK,
       });
     }
-    return { x, y, w: tw, h: th, head, rowH };
+  }
+  // Bin walls and the floor.
+  const binTop = pegTop - pegRows * pegGap - H * 0.02;
+  for (let k = 0; k <= bins; k++) {
+    const x = -W / 2 + k * binW;
+    prims.push({ k: "line", x1: x, y1: floor, x2: x, y2: binTop, c: FAINT });
+  }
+  prims.push({
+    k: "line",
+    x1: -W / 2,
+    y1: floor,
+    x2: W / 2,
+    y2: floor,
+    c: INK,
+  });
+
+  // Settled dots: each bin filled to its binomial height.
+  const maxH = (binTop - floor) * 0.92;
+  const choose = (m: number, k: number) => {
+    let c = 1;
+    for (let j = 1; j <= k; j++) c = (c * (m - j + 1)) / j;
+    return c;
   };
+  const peak = choose(bins - 1, (bins - 1) >> 1);
+  const tops: [number, number][] = [];
+  for (let k = 0; k < bins; k++) {
+    const hk = (choose(bins - 1, k) / peak) * maxH;
+    const x = -W / 2 + k * binW + binW * 0.14;
+    prims.push({ k: "rect", x, y: floor + hk, w: binW * 0.72, h: hk, c: INK });
+    tops.push([-W / 2 + (k + 0.5) * binW, floor + hk]);
+  }
+  // The bell, through the tops — a path the pulse runs along.
+  const sd = (bins - 1) / 4;
+  const curve: [number, number][] = [];
+  for (let t = 0; t <= 1.0001; t += 0.01) {
+    const x = -W / 2 + t * W;
+    const z = (t * bins - bins / 2) / Math.sqrt(sd * 2);
+    curve.push([x, floor + maxH * Math.exp(-z * z) + 10]);
+  }
+  for (let k = 1; k < curve.length; k++) {
+    prims.push({
+      k: "line",
+      x1: curve[k - 1][0],
+      y1: curve[k - 1][1],
+      x2: curve[k][0],
+      y2: curve[k][1],
+      c: JOLLOF,
+      path: 0,
+    });
+  }
+  // A few still falling through the pegs.
+  for (let k = 0; k < 18; k++) {
+    prims.push({
+      k: "disc",
+      x: (r() - 0.5) * binW * 6,
+      y: pegTop - r() * pegRows * pegGap,
+      r: 2.2,
+      c: JOLLOF,
+    });
+  }
 
-  const tw = W * 0.3;
-  const A = table(-W * 0.5, H * 0.5, tw, 5);
-  const B = table(W * 0.5 - tw, H * 0.5 - H * 0.06, tw, 4);
-  const C = table(-tw / 2 + W * 0.04, -H * 0.02, tw, 4);
-
-  // Relations — dashed elbows from a key row to a foreign key.
-  const elbow = (x1: number, y1: number, x2: number, y2: number) => {
-    const mx = (x1 + x2) / 2;
-    prims.push({ k: "line", x1, y1, x2: mx, y2: y1, c: DIM, dash: 6 });
-    prims.push({ k: "line", x1: mx, y1, x2: mx, y2, c: DIM, dash: 6 });
-    prims.push({ k: "line", x1: mx, y1: y2, x2, y2, c: DIM, dash: 6 });
-    prims.push({ k: "disc", x: x2, y: y2, r: 3.5, c: SIGNAL });
-  };
-  elbow(
-    A.x + A.w,
-    A.y - A.head - A.rowH * 0.9,
-    B.x,
-    B.y - B.head - B.rowH * 1.9,
-  );
-  elbow(A.x + A.w * 0.6, A.y - A.h, C.x, C.y - C.head - C.rowH * 2.9);
-  elbow(B.x + B.w * 0.5, B.y - B.h, C.x + C.w, C.y - C.head - C.rowH * 0.9);
-
-  const used = draw(s, prims, Math.floor(n * 0.8), isMobile(w) ? 3 : 4, r);
+  const used = draw(s, prims, Math.floor(n * 0.78), isMobile(w) ? 3 : 4, r);
   dust(s, used, n, w, h, r, b.cx, b.cy);
-  return { ...s, center: [b.cx, b.cy, 0], size: 1.6, mode: 0, pulse: 0 };
+  return { ...s, center: [b.cx, b.cy, 0], size: 1.7, mode: 0, pulse: 0.8 };
 }
 
 /**
- * Chapter 3 — flow. The same system as a graph: clients, an API, the services
+ * Chapter 5 — still building. The system as a graph: clients, an API, the services
  * behind it, and data moving through. The pulses are the point of the chapter.
  */
 export function flow(n: number, w: number, h: number): ShapeData {
@@ -428,14 +857,14 @@ export function flow(n: number, w: number, h: number): ShapeData {
       x: nd.x,
       y: nd.y,
       r: nd.r * W,
-      c: i === 3 ? SIGNAL : BONE,
+      c: i === 3 ? JOLLOF : INK,
     });
     prims.push({
       k: "disc",
       x: nd.x,
       y: nd.y,
       r: nd.r * W * 0.32,
-      c: i === 3 ? SIGNAL : BONE,
+      c: i === 3 ? JOLLOF : INK,
     });
   });
 
@@ -444,153 +873,8 @@ export function flow(n: number, w: number, h: number): ShapeData {
   return { ...s, center: [b.cx, b.cy, 0], size: 1.6, mode: 0, pulse: 1 };
 }
 
-/** Chapter 4 — surface. A browser window and a phone: the part people touch. */
-export function surface(n: number, w: number, h: number): ShapeData {
-  const r = rng(71);
-  const s = alloc(n);
-  const b = anchorBox(w, h);
-  const W = b.w;
-  const H = b.h;
-  const prims: Prim[] = [];
-
-  // Browser.
-  const bw = W * 0.82;
-  const bh = H * 0.86;
-  const bx = -W / 2;
-  const by = H / 2;
-  const bar = Math.max(16, bh * 0.08);
-  prims.push(...frame(bx, by, bw, bh, DIM));
-  prims.push({
-    k: "line",
-    x1: bx,
-    y1: by - bar,
-    x2: bx + bw,
-    y2: by - bar,
-    c: FAINT,
-  });
-  for (let i = 0; i < 3; i++) {
-    prims.push({
-      k: "disc",
-      x: bx + bar * (0.6 + i * 0.55),
-      y: by - bar / 2,
-      r: bar * 0.14,
-      c: i === 0 ? SIGNAL : DIM,
-    });
-  }
-  prims.push({
-    k: "rect",
-    x: bx + bw * 0.3,
-    y: by - bar * 0.3,
-    w: bw * 0.4,
-    h: bar * 0.4,
-    c: FAINT,
-  });
-  // Hero copy, a paragraph, a button, a picture.
-  const pad = bw * 0.07;
-  const top = by - bar - bh * 0.1;
-  prims.push({
-    k: "rect",
-    x: bx + pad,
-    y: top,
-    w: bw * 0.42,
-    h: bh * 0.07,
-    c: BONE,
-  });
-  prims.push({
-    k: "rect",
-    x: bx + pad,
-    y: top - bh * 0.1,
-    w: bw * 0.3,
-    h: bh * 0.07,
-    c: BONE,
-  });
-  for (let i = 0; i < 3; i++) {
-    prims.push({
-      k: "rect",
-      x: bx + pad,
-      y: top - bh * (0.24 + i * 0.05),
-      w: bw * (0.36 - i * 0.06),
-      h: bh * 0.018,
-      c: FAINT,
-    });
-  }
-  prims.push({
-    k: "rect",
-    x: bx + pad,
-    y: top - bh * 0.46,
-    w: bw * 0.16,
-    h: bh * 0.07,
-    c: SIGNAL,
-  });
-  const img = { x: bx + bw * 0.55, y: top, w: bw * 0.38, h: bh * 0.52 };
-  prims.push({ k: "rect", ...img, c: DIM });
-  // Cards row.
-  for (let i = 0; i < 3; i++) {
-    prims.push(
-      ...frame(
-        bx + pad + i * bw * 0.29,
-        by - bh * 0.76,
-        bw * 0.25,
-        bh * 0.14,
-        FAINT,
-      ),
-    );
-  }
-
-  // Phone, overlapping the browser's right edge.
-  const pw = W * 0.2;
-  const ph = pw * 2.05;
-  const px = W / 2 - pw;
-  const py = -H / 2 + ph;
-  prims.push(...frame(px, py, pw, ph, BONE));
-  prims.push({
-    k: "rect",
-    x: px + pw * 0.35,
-    y: py - ph * 0.03,
-    w: pw * 0.3,
-    h: ph * 0.02,
-    c: DIM,
-  });
-  prims.push({
-    k: "rect",
-    x: px + pw * 0.1,
-    y: py - ph * 0.12,
-    w: pw * 0.8,
-    h: ph * 0.3,
-    c: DIM,
-  });
-  prims.push({
-    k: "rect",
-    x: px + pw * 0.1,
-    y: py - ph * 0.48,
-    w: pw * 0.62,
-    h: ph * 0.04,
-    c: BONE,
-  });
-  prims.push({
-    k: "rect",
-    x: px + pw * 0.1,
-    y: py - ph * 0.56,
-    w: pw * 0.5,
-    h: ph * 0.025,
-    c: FAINT,
-  });
-  prims.push({
-    k: "rect",
-    x: px + pw * 0.1,
-    y: py - ph * 0.84,
-    w: pw * 0.8,
-    h: ph * 0.07,
-    c: SIGNAL,
-  });
-
-  const used = draw(s, prims, Math.floor(n * 0.8), isMobile(w) ? 3 : 4, r);
-  dust(s, used, n, w, h, r, b.cx, b.cy);
-  return { ...s, center: [b.cx, b.cy, 0], size: 1.6, mode: 0, pulse: 0 };
-}
-
 /**
- * Chapter 5 — proof. The projects act themselves out in the DOM, so the stage
+ * Chapter 6 — proof. The projects act themselves out in the DOM, so the stage
  * steps back: a sparse, dim field that keeps drifting behind the scenes.
  */
 export function field(n: number, w: number, h: number): ShapeData {
@@ -604,60 +888,15 @@ export function field(n: number, w: number, h: number): ShapeData {
       (r() - 0.5) * w * 1.3,
       (r() - 0.5) * h * 1.3,
       (r() - 0.5) * 700,
-      i < shown ? (r() < 0.04 ? [255, 74, 28, 70] : DUST) : [0, 0, 0, 0],
+      i < shown ? (r() < 0.04 ? [184, 50, 26, 70] : DUST) : [0, 0, 0, 0],
     );
   }
   return { ...s, center: [0, 0, 0], size: 1.6, mode: 2, pulse: 0 };
 }
 
 /**
- * Chapter 6 — me. Calm water under a low sun: a Lagos evening, and the one
- * shape on the page that is not a diagram.
- */
-export function calm(n: number, w: number, h: number): ShapeData {
-  const r = rng(97);
-  const s = alloc(n);
-  const mobile = isMobile(w);
-  const sunShare = Math.floor(n * 0.2);
-  const sea = n - sunShare;
-  const cols = Math.floor(Math.sqrt(sea * 2.2));
-  const rows = Math.floor(sea / cols);
-  const depth = 3200;
-  let i = 0;
-  for (let zr = 0; zr < rows; zr++) {
-    const f = zr / (rows - 1);
-    // Rows bunch up toward the horizon, like they would in perspective anyway.
-    const z = 260 - Math.pow(f, 0.8) * depth;
-    const a = Math.round(40 + 190 * Math.pow(1 - f, 1.4));
-    for (let xc = 0; xc < cols; xc++, i++) {
-      const x = ((xc + (zr % 2) * 0.5) / cols - 0.5) * w * 2.6;
-      put(s, i, x, -h * 0.26, z, [237, 232, 223, a], -1);
-    }
-  }
-  // The sun: a disc with the lower half cut into bars.
-  const R = Math.min(w, h) * (mobile ? 0.22 : 0.19);
-  const sy = -h * 0.06;
-  const sx = mobile ? 0 : w * 0.16;
-  for (; i < n - (sea - rows * cols); i++) {
-    let x = 0;
-    let y = 0;
-    for (let tries = 0; tries < 8; tries++) {
-      const a = r() * Math.PI * 2;
-      const rr = Math.sqrt(r()) * R;
-      x = Math.cos(a) * rr;
-      y = Math.sin(a) * rr;
-      const band = Math.floor((-y / R) * 7);
-      if (y > 0 || band % 2 === 0) break;
-    }
-    put(s, i, sx + x, sy + y, -600, [255, 74, 28, 200]);
-  }
-  for (; i < n; i++) put(s, i, 0, -h, -depth, [0, 0, 0, 0]);
-  return { ...s, center: [0, 0, 0], size: mobile ? 1.7 : 2, mode: 3, pulse: 0 };
-}
-
-/**
  * The end — "Say hello." set in the display face and sampled into dots, the
- * period in signal. Leftovers drift as dust around it.
+ * period in jollof. Leftovers drift as dust around it.
  */
 export function hello(
   n: number,
@@ -668,71 +907,33 @@ export function hello(
   const r = rng(131);
   const s = alloc(n);
   const mobile = isMobile(w);
-  const lines = mobile ? ["Say", "hello."] : ["Say hello."];
-  const size = mobile ? w * 0.34 : Math.min(w * 0.15, h * 0.3);
-  const c = document.createElement("canvas");
-  const cw = Math.ceil(w);
-  const ch = Math.ceil(size * lines.length * 1.05 + size * 0.4);
-  c.width = cw;
-  c.height = ch;
-  const ctx = c.getContext("2d", { willReadFrequently: true })!;
-  ctx.font = `600 ${size}px ${family}`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "#fff";
-  // Draw the period separately in red so sampling can tell them apart.
+  const lines = mobile ? ["Say", "hello"] : ["Say hello"];
+  const size = mobile ? w * 0.3 : Math.min(w * 0.2, h * 0.36);
+  const font = `900 ${size}px ${family}`;
+  const cw = w;
+  const ch = size * lines.length * 0.95 + size * 0.4;
+  const probe = document.createElement("canvas").getContext("2d")!;
+  probe.font = font;
+  const runs: Run[] = [];
   lines.forEach((line, li) => {
-    const y = size * (li + 1) * 0.98;
-    const body = line.endsWith(".") ? line.slice(0, -1) : line;
-    const full = ctx.measureText(line).width;
-    const bodyW = ctx.measureText(body).width;
+    const y = size * (li + 1) * 0.92;
+    const full = probe.measureText(line + ".").width;
     const left = cw / 2 - full / 2;
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#fff";
-    ctx.fillText(body, left, y);
-    if (body !== line) {
-      ctx.fillStyle = "#f00";
-      ctx.fillText(".", left + bodyW, y);
+    runs.push({ text: line, font, x: left, y, ink: 0 });
+    if (li === lines.length - 1) {
+      runs.push({
+        text: ".",
+        font,
+        x: left + probe.measureText(line).width,
+        y,
+        ink: 1,
+      });
     }
   });
-  const data = ctx.getImageData(0, 0, cw, ch).data;
-
-  // Pick a sampling step that lands near the particle budget.
-  const target = n * 0.82;
-  let lit = 0;
-  for (let k = 3; k < data.length; k += 4 * 2) if (data[k] > 128) lit++;
-  const step = Math.max(2, Math.round(Math.sqrt((lit * 2) / target)));
-
-  const pts: number[] = [];
-  for (let y = 0; y < ch; y += step) {
-    for (let x = 0; x < cw; x += step) {
-      const k = (y * cw + x) * 4;
-      if (data[k + 3] > 128) pts.push(x, y, data[k + 1] < 100 ? 1 : 0);
-    }
-  }
-  const count = Math.min(pts.length / 3, Math.floor(n * 0.9));
+  const { pts, step } = typeset(runs, cw, ch, n * 0.82);
   const offY = mobile ? h * 0.08 : h * 0.1;
-  let i = 0;
-  for (; i < count; i++) {
-    const x = pts[i * 3] - cw / 2;
-    const y = ch / 2 - pts[i * 3 + 1] - size * 0.15;
-    put(s, i, x, y + offY, (r() - 0.5) * 6, pts[i * 3 + 2] ? SIGNAL : BONE);
-  }
-  // Extra particles double up on the letters, so the type gets brighter rather
-  // than leaving a halo of strays.
-  const extra = Math.floor((n - i) * 0.6);
-  for (let j = 0; j < extra && count > 0; j++, i++) {
-    const p = Math.floor(r() * count);
-    put(
-      s,
-      i,
-      pts[p * 3] - cw / 2 + (r() - 0.5) * step,
-      ch / 2 - pts[p * 3 + 1] - size * 0.15 + offY + (r() - 0.5) * step,
-      (r() - 0.5) * 30,
-      pts[p * 3 + 2] ? SIGNAL : DIM,
-    );
-  }
-  dust(s, i, n, w, h, r);
+  pts.forEach((p) => (p.y += offY));
+  inkType(s, n, pts, [INK, JOLLOF], step, r, w, h);
   return {
     ...s,
     center: [0, 0, 0],
@@ -747,7 +948,7 @@ export function seed(n: number): ShapeData {
   const r = rng(3);
   const s = alloc(n);
   for (let i = 0; i < n; i++) {
-    put(s, i, (r() - 0.5) * 4, (r() - 0.5) * 4, 0, [237, 232, 223, 0]);
+    put(s, i, (r() - 0.5) * 4, (r() - 0.5) * 4, 0, [26, 18, 13, 0]);
   }
   return { ...s, center: [0, 0, 0], size: 1, mode: 0, pulse: 0 };
 }

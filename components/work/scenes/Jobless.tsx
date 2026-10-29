@@ -180,16 +180,16 @@ export default function JoblessScene({ register }: SceneProps) {
   );
 
   return (
-    <div ref={root} className="text-bone relative h-full w-full text-[12px]">
+    <div ref={root} className="text-ink relative h-full w-full text-[12px]">
       {/* Sources */}
       {copy.sources.map((s, i) => (
         <div
           key={s}
           data-source
-          className="border-bone-faint absolute left-0 flex h-[34px] w-[118px] items-center gap-2 rounded-[9px] border bg-[#161514] px-2.5"
+          className="border-ink-faint absolute left-0 flex h-[34px] w-[118px] items-center gap-2 rounded-[9px] border bg-[#161514] px-2.5"
           style={{ top: 92 + i * 56 }}
         >
-          <span className="bg-bone/10 grid h-5 w-5 place-items-center rounded-[5px] text-[10px] font-semibold">
+          <span className="bg-ink/10 grid h-5 w-5 place-items-center rounded-[5px] text-[10px] font-semibold">
             {s[0]}
           </span>
           <span className="text-[11px]">{s}</span>
@@ -218,7 +218,7 @@ export default function JoblessScene({ register }: SceneProps) {
         <span
           key={s}
           data-packet
-          className="bg-signal absolute h-[5px] w-[5px] rounded-full"
+          className="bg-jollof absolute h-[5px] w-[5px] rounded-full"
           style={{ left: 116, top: 107 + i * 56 }}
         />
       ))}
@@ -231,19 +231,19 @@ export default function JoblessScene({ register }: SceneProps) {
         <div className="flex h-[54px] items-center justify-between">
           <p className="text-[15px] font-medium tracking-[-0.01em]">Inbox</p>
           <p className="label relative text-[10px]">
-            <span data-total className="text-bone tabular-nums">
+            <span data-total className="text-ink tabular-nums">
               0
             </span>{" "}
             <span className="relative inline-grid">
               <span
                 data-total-label
-                className="text-bone-muted col-start-1 row-start-1"
+                className="text-ink-muted col-start-1 row-start-1"
               >
                 new today
               </span>
               <span
                 data-kept-label
-                className="text-bone-muted col-start-1 row-start-1 whitespace-nowrap"
+                className="text-ink-muted col-start-1 row-start-1 whitespace-nowrap"
               >
                 worth reading
               </span>
@@ -254,14 +254,14 @@ export default function JoblessScene({ register }: SceneProps) {
           <div
             key={l.role}
             data-row
-            className="border-bone-faint absolute right-4 left-4 flex items-center justify-between rounded-[10px] border bg-[#1a1918] px-3"
+            className="border-ink-faint absolute right-4 left-4 flex items-center justify-between rounded-[10px] border bg-[#1a1918] px-3"
             style={{ top: slotY(i) - 16, height: ROW_H }}
           >
             <div>
               <p className="text-[13px] font-medium tracking-[-0.01em]">
                 {l.role}
               </p>
-              <p className="text-bone-muted text-[11px]">{l.company}</p>
+              <p className="text-ink-muted text-[11px]">{l.company}</p>
             </div>
             {l.tag ? (
               <span
@@ -285,16 +285,16 @@ export default function JoblessScene({ register }: SceneProps) {
             )}
             <span
               data-strike={i}
-              className="bg-bone/50 absolute top-1/2 right-3 left-3 h-px origin-left"
+              className="bg-ink/50 absolute top-1/2 right-3 left-3 h-px origin-left"
               style={{ transform: "scaleX(0)" }}
             />
           </div>
         ))}
         <p
           data-why
-          className="text-bone-muted absolute right-4 bottom-4 left-4 text-[11px]"
+          className="text-ink-muted absolute right-4 bottom-4 left-4 text-[11px]"
         >
-          <span className="text-signal">●</span> Top match: React, remote, pay
+          <span className="text-jollof">●</span> Top match: React, remote, pay
           in range
         </p>
       </Panel>
@@ -314,7 +314,7 @@ export default function JoblessScene({ register }: SceneProps) {
               {...(i === copy.columns.length - 1
                 ? { "data-offer-head": "" }
                 : {})}
-              className="label text-bone-muted px-2.5 pt-2.5 text-[9px]"
+              className="label text-ink-muted px-2.5 pt-2.5 text-[9px]"
             >
               {c}
             </p>
@@ -329,7 +329,7 @@ export default function JoblessScene({ register }: SceneProps) {
         ].map(([c, r, role]) => (
           <div
             key={role as string}
-            className="border-bone-faint absolute rounded-[8px] border bg-[#161514] p-2 opacity-60"
+            className="border-ink-faint absolute rounded-[8px] border bg-[#161514] p-2 opacity-60"
             style={{
               left: colX(c as number) + 4,
               top: 84 + 66 + (r as number) * 66,
@@ -338,19 +338,19 @@ export default function JoblessScene({ register }: SceneProps) {
             }}
           >
             <p className="text-[10px] leading-tight font-medium">{role}</p>
-            <p className="text-bone-muted mt-0.5 text-[9px]">2 days ago</p>
+            <p className="text-ink-muted mt-0.5 text-[9px]">2 days ago</p>
           </div>
         ))}
         <div
           data-card
-          className="border-bone-faint absolute z-10 rounded-[8px] border bg-[#201e1c] p-2 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)]"
+          className="border-ink-faint absolute z-10 rounded-[8px] border bg-[#201e1c] p-2 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)]"
           style={{ left: colX(0) + 4, top: 84, width: COL_W - 8, height: 58 }}
         >
           <p className="text-[10px] leading-tight font-medium">{best.role}</p>
-          <p className="text-bone-muted mt-0.5 text-[9px]">{best.company}</p>
+          <p className="text-ink-muted mt-0.5 text-[9px]">{best.company}</p>
           <span
             data-offer-badge
-            className="bg-signal text-ink absolute -top-2 -right-2 rounded-full px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.08em] uppercase"
+            className="bg-jollof text-paper absolute -top-2 -right-2 rounded-full px-1.5 py-0.5 text-[8px] font-semibold tracking-[0.08em] uppercase"
           >
             Offer
           </span>
