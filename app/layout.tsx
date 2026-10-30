@@ -98,11 +98,11 @@ export default function RootLayout({
       <head>
         {/* Before first paint: mark the document as scripted, which is what lets
             the preloader and the hero's pre-intro state exist at all (see
-            globals.css), and apply the visitor's saved theme so it never
-            flashes. Visitors without JS get the finished page, in light. */}
+            globals.css), mark a repeat visit in this tab (a shorter count),
+            and apply the visitor's saved theme so it never flashes. Visitors without JS get the finished page, in light. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.setAttribute("data-js","");try{history.scrollRestoration="manual"}catch(e){}${THEME_SCRIPT}`,
+            __html: `document.documentElement.setAttribute("data-js","");try{history.scrollRestoration="manual"}catch(e){}try{var s=sessionStorage;if(s.getItem("seen")==="1")document.documentElement.setAttribute("data-seen","");s.setItem("seen","1")}catch(e){}${THEME_SCRIPT}`,
           }}
         />
       </head>
@@ -114,6 +114,10 @@ export default function RootLayout({
           Skip to content
         </a>
         <SmoothScrollProvider>
+          {/* First in the document, so it streams and paints before the page
+              under it does — the page is long, and anything later would let
+              the hero show first. */}
+          <Preloader />
           <StageCanvas />
           <Hud />
           {children}
@@ -122,7 +126,6 @@ export default function RootLayout({
             className="grain pointer-events-none fixed inset-0 z-50"
           />
           <Cursor />
-          <Preloader />
         </SmoothScrollProvider>
       </body>
     </html>

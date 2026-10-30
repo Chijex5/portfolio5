@@ -295,6 +295,19 @@ html[data-js] .preloader {
   }
 }
 
+/* The count's reels: the tens and hundreds slide to each new digit; the units
+   change too often to animate (the counter itself is the inline script in
+   Preloader.tsx). */
+.pl-reel {
+  transition: transform 0.45s var(--ease-out-expo);
+}
+.pl-reel-units {
+  transition: none;
+}
+.pl-bar {
+  transform: scaleX(0);
+}
+
 /* No pre-intro hiding is needed for the hero: with JS the preloader covers it
    until the intro plays, and without JS there is no intro. Keeping it painted
    underneath is also what lets the browser count it as the page's largest
