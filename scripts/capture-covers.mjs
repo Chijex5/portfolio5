@@ -96,6 +96,12 @@ const HIDE_IF_FIXED = [
  */
 const TARGETS = [
   {
+    slug: "riseclassroom",
+    url: "https://rise-classroom-frontend.netlify.app",
+    /** Netlify's "Powered by Netlify" badge, pinned bottom-right. */
+    hide: ["#nl-badge-frame"],
+  },
+  {
     slug: "dfootprint",
     url: "https://dfootprint.me",
     /** The "Welcome to D'FOOTPRINT!" toast that pops in over the hero. */

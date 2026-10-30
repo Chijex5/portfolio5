@@ -270,7 +270,7 @@ export default function VoltiqScene({ register }: SceneProps) {
   const o = AREAS.odenigwe;
   const f = AREAS.odim;
   return (
-    <div ref={root} className="text-bone relative h-full w-full text-[12px]">
+    <div ref={root} className="text-ink relative h-full w-full text-[12px]">
       <Panel data-map className="inset-0 overflow-hidden bg-[#0d0c0b]">
         <svg
           viewBox="0 0 600 460"
@@ -358,7 +358,7 @@ export default function VoltiqScene({ register }: SceneProps) {
         {/* Substation */}
         <span
           data-station
-          className="text-ink absolute grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[6px] bg-[#f2b45a] text-[12px]"
+          className="text-paper absolute grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[6px] bg-[#f2b45a] text-[12px]"
           style={{ left: ROUTE[0][0], top: ROUTE[0][1] }}
         >
           ⚡
@@ -368,15 +368,15 @@ export default function VoltiqScene({ register }: SceneProps) {
       {/* Pills over the map */}
       <span
         data-dark-pill
-        className="text-ink absolute flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#ff5a3c] px-2.5 py-1 text-[11px] font-medium whitespace-nowrap"
+        className="text-paper absolute flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#ff5a3c] px-2.5 py-1 text-[11px] font-medium whitespace-nowrap"
         style={{ left: o.x, top: o.y - 46 }}
       >
-        <span className="bg-ink h-1.5 w-1.5 rounded-full" />
+        <span className="bg-paper h-1.5 w-1.5 rounded-full" />
         {copy.outage.area} · No light
       </span>
       <span
         data-lit-pill
-        className="text-ink absolute flex -translate-x-1/2 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap"
+        className="text-paper absolute flex -translate-x-1/2 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap"
         style={{ left: o.x, top: o.y - 46, background: GREEN }}
       >
         ✓ {copy.outage.area} · Light restored
@@ -397,7 +397,7 @@ export default function VoltiqScene({ register }: SceneProps) {
 
       {/* The time */}
       <div className="absolute top-4 right-5 text-right">
-        <p className="label text-bone-muted text-[9px]">Nsukka</p>
+        <p className="label text-ink-muted text-[9px]">Nsukka</p>
         <div className="relative mt-0.5 grid h-[30px] justify-items-end">
           {copy.times.map((t) => (
             <span
@@ -417,14 +417,14 @@ export default function VoltiqScene({ register }: SceneProps) {
         <p className="mt-1 text-[22px] font-semibold tracking-[-0.03em] tabular-nums">
           <span data-report-count>1</span> neighbours
         </p>
-        <p className="text-bone-muted text-[11px]">
+        <p className="text-ink-muted text-[11px]">
           reported no light in {copy.outage.area}
         </p>
       </Panel>
 
       {/* EEDC console */}
       <Panel data-console className="top-4 left-4 w-[230px] p-3.5">
-        <p className="label text-bone-muted text-[9px]">
+        <p className="label text-ink-muted text-[9px]">
           EEDC console · Fault #1
         </p>
         <p className="mt-1 text-[15px] font-medium tracking-[-0.01em]">
@@ -432,7 +432,7 @@ export default function VoltiqScene({ register }: SceneProps) {
         </p>
         <div className="mt-2.5 flex items-center justify-between rounded-[8px] bg-[#1d2233] px-2.5 py-1.5 text-[11px]">
           <span className="text-[#9db8ff]">{copy.crew.name}</span>
-          <span className="text-bone-muted">
+          <span className="text-ink-muted">
             {copy.crew.distance} · en route
           </span>
         </div>
@@ -444,15 +444,15 @@ export default function VoltiqScene({ register }: SceneProps) {
         className="top-[244px] left-[212px] w-[250px] rounded-[16px] bg-[#22201e]/95 p-3"
       >
         <div className="flex items-center gap-2">
-          <span className="text-ink grid h-5 w-5 place-items-center rounded-[6px] bg-[#f2b45a] text-[10px]">
+          <span className="text-paper grid h-5 w-5 place-items-center rounded-[6px] bg-[#f2b45a] text-[10px]">
             ⚡
           </span>
-          <span className="label text-bone-muted text-[9px]">VoltIq · now</span>
+          <span className="label text-ink-muted text-[9px]">VoltIq · now</span>
         </div>
         <p className="mt-1.5 text-[13px] font-medium">
           Possible outage tonight, {copy.forecast.window}
         </p>
-        <p className="text-bone-muted text-[11px]">
+        <p className="text-ink-muted text-[11px]">
           {copy.forecast.area} · {copy.forecast.chance} likely. Charge your
           phones.
         </p>

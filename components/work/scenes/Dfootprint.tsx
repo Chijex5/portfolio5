@@ -267,17 +267,17 @@ export default function DfootprintScene({ register }: SceneProps) {
 
   const p = copy.product;
   return (
-    <div ref={root} className="text-bone relative h-full w-full text-[13px]">
+    <div ref={root} className="text-ink relative h-full w-full text-[13px]">
       {/* Storefront --------------------------------------------------------- */}
       <div
         data-store
-        className="bg-ink-raised border-bone-faint absolute top-[24px] left-0 h-[412px] w-[330px] overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
+        className="bg-paper-raised border-ink-faint absolute top-[24px] left-0 h-[412px] w-[330px] overflow-hidden rounded-[14px] border shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
       >
-        <div className="border-bone-faint flex h-[30px] items-center gap-1.5 border-b px-3">
-          <span className="bg-bone-faint h-2 w-2 rounded-full" />
-          <span className="bg-bone-faint h-2 w-2 rounded-full" />
-          <span className="bg-bone-faint h-2 w-2 rounded-full" />
-          <span className="label text-bone-muted mx-auto text-[9px]">
+        <div className="border-ink-faint flex h-[30px] items-center gap-1.5 border-b px-3">
+          <span className="bg-ink-faint h-2 w-2 rounded-full" />
+          <span className="bg-ink-faint h-2 w-2 rounded-full" />
+          <span className="bg-ink-faint h-2 w-2 rounded-full" />
+          <span className="label text-ink-muted mx-auto text-[9px]">
             dfootprint.me
           </span>
         </div>
@@ -303,14 +303,14 @@ export default function DfootprintScene({ register }: SceneProps) {
             </p>
             <p className="text-[15px] tabular-nums">{p.price}</p>
           </div>
-          <p className="text-bone-muted mt-0.5 text-[11px]">{p.variant}</p>
-          <p className="label text-bone-muted mt-3 text-[9px]">Size</p>
+          <p className="text-ink-muted mt-0.5 text-[11px]">{p.variant}</p>
+          <p className="label text-ink-muted mt-3 text-[9px]">Size</p>
           <div className="mt-1.5 flex gap-1.5">
             {p.sizes.map((s) => (
               <span
                 key={s}
                 data-chip
-                className="border-bone-faint grid h-[28px] w-[36px] place-items-center rounded-[7px] border text-[11px] tabular-nums"
+                className="border-ink-faint grid h-[28px] w-[36px] place-items-center rounded-[7px] border text-[11px] tabular-nums"
               >
                 {s}
               </span>
@@ -318,21 +318,21 @@ export default function DfootprintScene({ register }: SceneProps) {
             <span
               data-chip
               data-custom
-              className="border-bone-faint grid h-[28px] place-items-center rounded-[7px] border px-2.5 text-[11px] font-medium"
+              className="border-ink-faint grid h-[28px] place-items-center rounded-[7px] border px-2.5 text-[11px] font-medium"
             >
               {p.custom}
             </span>
           </div>
           <div data-measure className="mt-2 overflow-hidden">
             <div className="flex h-[30px] items-center justify-between rounded-[7px] bg-[#1c1a18] px-2.5 text-[11px]">
-              <span className="text-bone-muted">Foot length</span>
+              <span className="text-ink-muted">Foot length</span>
               <span className="tabular-nums">{p.footLength}</span>
             </div>
           </div>
         </div>
         <div
           data-add
-          className="bg-bone text-ink absolute right-4 bottom-4 left-4 grid h-[38px] place-items-center rounded-[9px] text-[12px] font-medium"
+          className="bg-ink text-paper absolute right-4 bottom-4 left-4 grid h-[38px] place-items-center rounded-[9px] text-[12px] font-medium"
         >
           Add to bag
         </div>
@@ -341,20 +341,18 @@ export default function DfootprintScene({ register }: SceneProps) {
       {/* Paystack checkout --------------------------------------------------- */}
       <div
         data-pay
-        className="border-bone-faint absolute top-[96px] left-[282px] w-[300px] rounded-[14px] border bg-[#161514] p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]"
+        className="border-ink-faint absolute top-[96px] left-[282px] w-[300px] rounded-[14px] border bg-[#161514] p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]"
       >
         <div className="flex items-center justify-between">
-          <p className="label text-bone-muted text-[9px]">
-            Secured by Paystack
-          </p>
-          <p className="text-bone-muted text-[10px]">D&rsquo;Footprint</p>
+          <p className="label text-ink-muted text-[9px]">Secured by Paystack</p>
+          <p className="text-ink-muted text-[10px]">D&rsquo;Footprint</p>
         </div>
-        <p className="text-bone-muted mt-4 text-[11px]">Pay</p>
+        <p className="text-ink-muted mt-4 text-[11px]">Pay</p>
         <p className="text-[30px] font-medium tracking-[-0.03em] tabular-nums">
           {p.price}
         </p>
-        <div className="border-bone-faint mt-4 flex h-[38px] items-center justify-between rounded-[8px] border px-3 text-[12px]">
-          <span className="text-bone-muted">Card</span>
+        <div className="border-ink-faint mt-4 flex h-[38px] items-center justify-between rounded-[8px] border px-3 text-[12px]">
+          <span className="text-ink-muted">Card</span>
           <span className="tracking-[0.08em] tabular-nums">
             {copy.payment.card}
           </span>
@@ -366,7 +364,7 @@ export default function DfootprintScene({ register }: SceneProps) {
           <span data-paylabel>Pay {p.price}</span>
           <span
             data-spinner
-            className="border-bone/30 border-t-bone absolute h-4 w-4 rounded-full border-2"
+            className="border-ink/30 border-t-ink absolute h-4 w-4 rounded-full border-2"
           />
           <span data-paid className="absolute flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -388,10 +386,10 @@ export default function DfootprintScene({ register }: SceneProps) {
       {/* Order tracker ------------------------------------------------------- */}
       <div
         data-track
-        className="border-bone-faint absolute top-[24px] right-0 h-[412px] w-[320px] rounded-[14px] border bg-[#161514] p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]"
+        className="border-ink-faint absolute top-[24px] right-0 h-[412px] w-[320px] rounded-[14px] border bg-[#161514] p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.9)]"
       >
         <div data-track-head>
-          <p className="label text-bone-muted text-[9px]">
+          <p className="label text-ink-muted text-[9px]">
             Order {copy.order.id}
           </p>
           <p className="mt-1 text-[16px] font-medium tracking-[-0.01em]">
@@ -399,21 +397,21 @@ export default function DfootprintScene({ register }: SceneProps) {
           </p>
         </div>
         <div className="relative mt-6">
-          <span className="bg-bone-faint absolute top-[7px] left-[7px] h-[232px] w-[2px]" />
+          <span className="bg-ink-faint absolute top-[7px] left-[7px] h-[232px] w-[2px]" />
           <span
             data-fill
-            className="bg-signal absolute top-[7px] left-[7px] h-[232px] w-[2px] origin-top"
+            className="bg-accent absolute top-[7px] left-[7px] h-[232px] w-[2px] origin-top"
           />
           <ol className="relative grid gap-[38px]">
             {copy.order.steps.map((s) => (
               <li key={s.label} data-step className="flex items-center gap-4">
                 <span
                   data-dot
-                  className="bg-ink border-bone-faint z-10 h-4 w-4 shrink-0 scale-90 rounded-full border-2"
+                  className="bg-paper border-ink-faint z-10 h-4 w-4 shrink-0 scale-90 rounded-full border-2"
                 />
                 <span className="flex flex-1 items-baseline justify-between">
                   <span className="text-[13px]">{s.label}</span>
-                  <span className="label text-bone-muted text-[9px]">
+                  <span className="label text-ink-muted text-[9px]">
                     {s.time}
                   </span>
                 </span>
@@ -423,7 +421,7 @@ export default function DfootprintScene({ register }: SceneProps) {
         </div>
         <div
           data-delivered
-          className="bg-signal text-ink absolute right-5 bottom-5 left-5 grid h-[40px] place-items-center rounded-[9px] text-[12px] font-medium"
+          className="bg-accent text-paper absolute right-5 bottom-5 left-5 grid h-[40px] place-items-center rounded-[9px] text-[12px] font-medium"
         >
           Delivered
         </div>
@@ -432,26 +430,26 @@ export default function DfootprintScene({ register }: SceneProps) {
       {/* Notification -------------------------------------------------------- */}
       <div
         data-note
-        className="border-bone-faint absolute top-[12px] right-[10px] w-[300px] rounded-[16px] border bg-[#22201e]/95 p-3 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.9)] backdrop-blur"
+        className="border-ink-faint absolute top-[12px] right-[10px] w-[300px] rounded-[16px] border bg-[#22201e]/95 p-3 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.9)] backdrop-blur"
       >
         <div className="flex items-center gap-2">
-          <span className="bg-signal text-ink grid h-5 w-5 place-items-center rounded-[6px] text-[10px] font-semibold">
+          <span className="bg-accent text-paper grid h-5 w-5 place-items-center rounded-[6px] text-[10px] font-semibold">
             D
           </span>
-          <span className="label text-bone-muted text-[9px]">
+          <span className="label text-ink-muted text-[9px]">
             D&rsquo;Footprint · now
           </span>
         </div>
         <p className="mt-1.5 text-[13px] font-medium">
           {copy.notification.title}
         </p>
-        <p className="text-bone-muted text-[11px]">{copy.notification.body}</p>
+        <p className="text-ink-muted text-[11px]">{copy.notification.body}</p>
       </div>
 
       {/* Pointer ------------------------------------------------------------- */}
       <span
         data-cursor
-        className="border-ink bg-bone pointer-events-none absolute top-0 left-0 z-20 block h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
+        className="border-paper bg-ink pointer-events-none absolute top-0 left-0 z-20 block h-[18px] w-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-[0_2px_10px_rgba(0,0,0,0.6)]"
       />
     </div>
   );

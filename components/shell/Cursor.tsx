@@ -133,11 +133,11 @@ export default function Cursor() {
     <div
       ref={dot}
       aria-hidden="true"
-      className="bg-bone pointer-events-none fixed top-0 left-0 z-[100] flex h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full opacity-0 mix-blend-difference"
+      className="pointer-events-none fixed top-0 left-0 z-[100] flex h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-[#f3eadb] opacity-0 mix-blend-difference"
     >
       <span
         ref={label}
-        className="label text-ink scale-[0.6] text-[0.625rem] whitespace-nowrap opacity-0"
+        className="label scale-[0.6] text-[0.625rem] whitespace-nowrap text-[#1a120d] opacity-0"
       />
     </div>
   );

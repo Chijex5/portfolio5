@@ -1,5 +1,7 @@
 # Portfolio Content — Full Copy
 
+> **Superseded for the home page by `personality-concept.md`** — the story copy now lives in `components/story/Story.tsx`. Kept for the project blurbs.
+>
 > Written in the voice of your previous portfolio (pulled from `sections.tsx` in `myportfolio`). Two blurbs below are reused near-verbatim from that site since they already worked (D'Footprint, Jobless/Scout); the other four are new, matched to the same tone: short, concrete, no adjectives doing the work a verb should do.
 
 ---
@@ -94,8 +96,8 @@
 
 **Currently / Previously row:**
 
-- Currently — EY Nigeria, Transfer pricing
-- Statistics undergraduate — University of Nigeria, Nsukka
+- Statistics — University of Nigeria, Nsukka (signed out 2026)
+- Student — Risevest Academy
 
 ---
 
@@ -123,5 +125,5 @@
 ## Notes for the implementer
 
 - The 6 work items map to `index: "01"`–`"06"` the same way the old `sections.tsx` did — alternate the image/copy side left↔right per project (odd = copy left, even = copy left too but frame reversed — see original file's `order-1`/`order-2` pattern) to keep the editorial rhythm.
-- "Currently / Previously" in About is new — the old site only had a "Previously" row (Heizong Tech, Vzy internships). Swap those out for the EY Nigeria role since that's the current one; drop the old internships unless you want them listed further back in a longer timeline.
+- "Currently / Previously" in About is new — the old site only had a "Previously" row (Heizong Tech, Vzy internships). Drop the old internships unless you want them listed further back in a longer timeline.
 - Marquee brand list and Work section are now the same 6 projects, kept in sync — update both together if the project set changes again.

@@ -18,7 +18,7 @@ export type CaseStudyBlock =
 export interface Project {
   /** URL segment: /work/[slug] */
   slug: string;
-  /** Editorial index — "01".."06". */
+  /** Editorial index — "01", "02", … */
   index: string;
   title: string;
   /** "E-commerce", "AI tooling", … */
