@@ -77,8 +77,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#12100e",
-  colorScheme: "dark light",
+  themeColor: "#0d0d0c",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -87,10 +87,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      // Dark is the site's own look; light is the visitor's choice (saved,
-      // and applied by THEME_SCRIPT before paint).
-      data-theme="dark"
-      data-accent="jollof"
+      // The accent is the visitor's choice (saved, and applied by
+      // THEME_SCRIPT before paint).
+      data-accent="iris"
       suppressHydrationWarning
       className={`${display.variable} ${serif.variable} ${mono.variable}`}
     >

@@ -1,49 +1,48 @@
 /**
- * The visitor's theme: light or dark, and an accent colour.
+ * The visitor's accent colour. The site has one look (dark); the accent is
+ * the only thing a visitor chooses.
  *
- * Stored on <html> as `data-theme` and `data-accent`, which globals.css turns
- * into tokens. An inline script in the layout applies the saved choice before
- * first paint (see `THEME_SCRIPT`), so there is no flash of the wrong theme;
- * this module takes over once React is running.
+ * Stored on <html> as `data-accent`, which globals.css turns into the
+ * `--accent` token. An inline script in the layout applies the saved choice
+ * before first paint (see `THEME_SCRIPT`), so it never flashes; this module
+ * takes over once React is running.
  */
 
-export type Mode = "light" | "dark";
-
 export const ACCENTS = [
-  { id: "jollof", label: "Jollof", light: "#b8321a", dark: "#ff5a36" },
-  { id: "plantain", label: "Plantain", light: "#9a6106", dark: "#f2b13c" },
-  { id: "indigo", label: "Indigo", light: "#4338ca", dark: "#a094ff" },
-  { id: "forest", label: "Forest", light: "#1d7048", dark: "#4cc98c" },
-  { id: "mono", label: "Mono", light: "#1a120d", dark: "#f3eadb" },
+  { id: "iris", label: "Iris", color: "#a9b1f5" },
+  { id: "sage", label: "Sage", color: "#a9c9a1" },
+  { id: "clay", label: "Clay", color: "#d99a7f" },
+  { id: "sand", label: "Sand", color: "#d9c294" },
+  { id: "bone", label: "Bone", color: "#e9e5dd" },
 ] as const;
 
 export type AccentId = (typeof ACCENTS)[number]["id"];
-export type Theme = { mode: Mode; accent: AccentId };
+export type Theme = { accent: AccentId };
 
-const KEY = "theme";
-const DEFAULT_ACCENT: AccentId = "jollof";
+const KEY = "accent";
+const DEFAULT_ACCENT: AccentId = "iris";
+const IDS = ACCENTS.map((a) => a.id).join("|");
 
 /**
  * Runs in <head> before the page paints. Kept dependency-free and tiny; it
  * must agree with `read()` below on the storage format.
  */
-export const THEME_SCRIPT = `(function(){var d=document.documentElement,t={};try{t=JSON.parse(localStorage.getItem("${KEY}")||"{}")}catch(e){}var m=t.mode==="light"?"light":"dark";d.setAttribute("data-theme",m);d.setAttribute("data-accent",t.accent||"${DEFAULT_ACCENT}")})();`;
+export const THEME_SCRIPT = `(function(){try{var a=localStorage.getItem("${KEY}");if(/^(${IDS})$/.test(a||""))document.documentElement.setAttribute("data-accent",a)}catch(e){}})();`;
 
 function read(): Theme {
-  const d = document.documentElement;
-  const mode = d.getAttribute("data-theme") === "light" ? "light" : "dark";
-  const a = d.getAttribute("data-accent");
+  const a = document.documentElement.getAttribute("data-accent");
   const accent = ACCENTS.some((x) => x.id === a)
     ? (a as AccentId)
     : DEFAULT_ACCENT;
-  return { mode, accent };
+  return { accent };
 }
 
 let current: Theme | null = null;
-const SERVER: Theme = { mode: "dark", accent: DEFAULT_ACCENT };
+const SERVER: Theme = { accent: DEFAULT_ACCENT };
 const listeners = new Set<() => void>();
 
 export const theme = {
+  default: DEFAULT_ACCENT,
   get(): Theme {
     if (!current) current = read();
     return current;
@@ -52,65 +51,19 @@ export const theme = {
   getServer(): Theme {
     return SERVER;
   },
-  /**
-   * Whether the last switch should snap rather than ease (it is being shown
-   * by a view transition instead).
-   */
-  instant: false,
-  set(next: Partial<Theme>, { instant = false } = {}) {
+  set(next: Partial<Theme>) {
     const t = { ...theme.get(), ...next };
     current = t;
-    theme.instant = instant;
     const d = document.documentElement;
     // Colours ease over for the length of the switch only — a permanent
     // transition would also animate every hover and the first paint.
-    if (!instant) {
-      d.classList.add("theme-anim");
-      window.setTimeout(() => d.classList.remove("theme-anim"), 600);
-    }
-    d.setAttribute("data-theme", t.mode);
+    d.classList.add("theme-anim");
+    window.setTimeout(() => d.classList.remove("theme-anim"), 600);
     d.setAttribute("data-accent", t.accent);
     try {
-      localStorage.setItem(KEY, JSON.stringify(t));
+      localStorage.setItem(KEY, t.accent);
     } catch {}
     listeners.forEach((fn) => fn());
-  },
-  /**
-   * Switch light/dark as a circle spreading out from (x, y) — the button
-   * that was pressed. Falls back to the plain eased switch where view
-   * transitions are missing or motion is reduced.
-   */
-  toggleFrom(x: number, y: number) {
-    const mode: Mode = theme.get().mode === "dark" ? "light" : "dark";
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!document.startViewTransition || reduced) {
-      theme.set({ mode });
-      return;
-    }
-    const r = Math.hypot(
-      Math.max(x, innerWidth - x),
-      Math.max(y, innerHeight - y),
-    );
-    const vt = document.startViewTransition(() =>
-      theme.set({ mode }, { instant: true }),
-    );
-    vt.ready
-      .then(() => {
-        document.documentElement.animate(
-          {
-            clipPath: [
-              `circle(0px at ${x}px ${y}px)`,
-              `circle(${r}px at ${x}px ${y}px)`,
-            ],
-          },
-          {
-            duration: 750,
-            easing: "cubic-bezier(0.87, 0, 0.13, 1)",
-            pseudoElement: "::view-transition-new(root)",
-          },
-        );
-      })
-      .catch(() => {});
   },
   subscribe(fn: () => void) {
     listeners.add(fn);

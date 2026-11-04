@@ -4,12 +4,12 @@ import { useRouter } from "next/navigation";
 import { Fragment, useRef } from "react";
 import { chapter } from "@/lib/chapter";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
-import { intro } from "@/lib/intro";
 import { CONTACT, SOCIAL_LINKS } from "@/lib/nav";
 import { projects } from "@/lib/projects";
 import { getLenis, lockScroll, recallStory, rememberStory } from "@/lib/scroll";
 import BuildSequence from "@/components/build/BuildSequence";
 import LivingWord from "@/components/hero/LivingWord";
+import XRayHero from "@/components/hero/XRayHero";
 import EmailLink from "@/components/shared/EmailLink";
 import SectionTitle from "@/components/story/SectionTitle";
 import ProjectChapter from "@/components/work/ProjectChapter";
@@ -19,7 +19,7 @@ import { SCENES } from "@/components/work/scenes";
 /**
  * The home page:
  *
- *   hero     the headline over a full-width, living "CHIJIOKE"
+ *   hero     the statement, with an x-ray lens onto how it's built
  *   build    a feature built in four scrolls, data to button
  *   work     each project acted out
  *   about    who, what he is on now, stack, GitHub activity
@@ -72,9 +72,6 @@ export default function Story({
     () => {
       const el = root.current!;
       const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-      // Arriving after the intro has played (back from a case study): no
-      // waiting on it.
-      const returning = intro.phase === "reveal";
 
       // The HUD's running label: whichever section holds the middle of the
       // screen.
@@ -135,42 +132,6 @@ export default function Story({
           { fontStretch: "56%" },
           { fontStretch: "128%", duration: 1.5, ease: "expo.out" },
         );
-
-      // Hero: plays once, as the preloader leaves.
-      const hero = el.querySelector<HTMLElement>("#top")!;
-      const heroTitle = hero.querySelector<HTMLElement>("[data-hero-title]")!;
-      const heroBits = hero.querySelectorAll("[data-hero-bit]");
-      gsap.set(heroBits, { autoAlpha: 0, y: 12 });
-      let heroPlayed = false;
-      lines(heroTitle, (ls) => {
-        if (heroPlayed) return gsap.set(ls, { yPercent: 0 });
-        return gsap.set(ls, { yPercent: 115 });
-      });
-      const offIntro = intro.onReveal(() => {
-        heroPlayed = true;
-        const ls = heroTitle.querySelectorAll(".split-line");
-        // The preloader calls this as its wipe passes mid-screen. The name
-        // rises first (LivingWord); the headline follows it in.
-        const d = returning ? 0.15 : 0.45;
-        gsap.to(ls, {
-          yPercent: 0,
-          duration: 1.4,
-          ease: "expo.out",
-          stagger: 0.12,
-          delay: d,
-        });
-        heroTitle
-          .querySelectorAll(".turn")
-          .forEach((w) => stretch(w).delay(d + 0.45));
-        gsap.to(heroBits, {
-          autoAlpha: 1,
-          y: 0,
-          duration: 1,
-          ease: "expo.out",
-          stagger: 0.08,
-          delay: d + 0.4,
-        });
-      });
 
       // Headings: lines rise out of their masks, then the accent word
       // stretches. Back out if you scroll back above them.
@@ -364,10 +325,6 @@ export default function Story({
           },
         });
       });
-
-      return () => {
-        offIntro();
-      };
     },
     { scope: root },
   );
@@ -395,66 +352,7 @@ export default function Story({
 
   return (
     <div ref={root} className="relative z-10">
-      {/* 00 — Hero ---------------------------------------------------------- */}
-      {/* One moment: the name, as big as the screen allows, alive under the
-          pointer. Everything else is a footnote to it. */}
-      <section
-        id="top"
-        className="relative flex h-svh min-h-[34rem] flex-col px-4 pt-24 pb-16 md:px-10 md:pt-28 md:pb-24"
-      >
-        <div data-exit className="flex flex-1 flex-col justify-center">
-          {/* Desktop: one line in the narrow cut — narrow letters filling
-              the width stand tall. A phone is too narrow for one line, so
-              the name breaks over two. */}
-          <LivingWord
-            text="CHIJIOKE"
-            accents={[0, 3]}
-            label="Chijioke — CJ"
-            narrow={58}
-            maxHeight={0.5}
-            className="hidden md:block"
-          />
-          <div className="space-y-1 md:hidden">
-            <LivingWord
-              text="CHIJI"
-              accents={[0, 3]}
-              label="Chijioke — CJ"
-              narrow={70}
-            />
-            <LivingWord text="OKE" label="" narrow={70} maxHeight={0.26} />
-          </div>
-        </div>
-
-        <div
-          data-exit
-          className="border-ink-faint flex flex-col gap-5 border-t pt-5 md:flex-row md:items-end md:justify-between md:pt-6"
-        >
-          <h1
-            data-intro
-            data-hero-title
-            className="display max-w-[22ch] text-[clamp(1.75rem,2.7vw,3rem)]"
-          >
-            I build web products people actually <em className="turn">use.</em>
-          </h1>
-          <p data-intro data-hero-bit className="label flex items-center gap-5">
-            {CONTACT.available && (
-              <span className="border-accent text-accent inline-flex -rotate-2 items-center gap-2 border px-2 py-1">
-                <span className="bg-accent h-1.5 w-1.5 animate-pulse rounded-full" />
-                Open to work
-              </span>
-            )}
-            <a
-              href="#build"
-              className="text-ink-muted hover:text-ink flex items-center gap-3 transition-colors"
-            >
-              <span className="bg-ink-faint relative block h-6 w-px overflow-hidden">
-                <span className="bg-accent absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
-              </span>
-              Scroll
-            </a>
-          </p>
-        </div>
-      </section>
+      <XRayHero />
 
       <BuildSequence />
 
