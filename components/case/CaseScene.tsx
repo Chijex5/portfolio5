@@ -6,7 +6,6 @@ import { SCENES } from "@/components/work/scenes";
 import { chapter } from "@/lib/chapter";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { lockScroll } from "@/lib/scroll";
-import { stage } from "@/lib/stage/stage";
 
 /** Real seconds per step when a scene plays on its own. */
 const STEP_SECONDS = 3.4;
@@ -33,7 +32,6 @@ export default function CaseScene({
   useGSAP(
     () => {
       chapter.set({ index, label });
-      stage.show(false, 0.3);
       lockScroll(false);
 
       const tl = timeline.current;

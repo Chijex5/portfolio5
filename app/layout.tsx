@@ -4,14 +4,12 @@ import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import Cursor from "@/components/shell/Cursor";
 import Hud from "@/components/shell/Hud";
 import Preloader from "@/components/shell/Preloader";
-import StageCanvas from "@/components/shell/StageCanvas";
 import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
-// The display face: one variable family whose width axis does the work — set
-// condensed for headlines, let out wide for the turn word. The particle stage
-// also sets "CJ" and "Say hello." in it, reading the family back from this
-// variable (lib/stage/stage.ts), so keep the name in step.
+// The display face: one variable family whose width and weight axes do the
+// work — condensed for headlines, let out wide for the turn word, and both
+// axes live in the hero name (components/hero/LivingWord.tsx).
 const display = Anybody({
   subsets: ["latin"],
   weight: "variable",
@@ -79,11 +77,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3eadb" },
-    { media: "(prefers-color-scheme: dark)", color: "#12100e" },
-  ],
-  colorScheme: "light dark",
+  themeColor: "#0d0d0c",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -92,6 +87,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      // The accent is the visitor's choice (saved, and applied by
+      // THEME_SCRIPT before paint).
+      data-accent="iris"
       suppressHydrationWarning
       className={`${display.variable} ${serif.variable} ${mono.variable}`}
     >
@@ -118,7 +116,6 @@ export default function RootLayout({
               under it does — the page is long, and anything later would let
               the hero show first. */}
           <Preloader />
-          <StageCanvas />
           <Hud />
           {children}
           <div

@@ -11,16 +11,14 @@ import { ACCENTS, theme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 /**
- * Two small controls in the header: light/dark, and a swatch that opens the
- * accent picker. Both write to `theme`, which repaints the page and the
- * particle stage together.
+ * A swatch in the header that opens the accent picker. It writes to
+ * `theme`, which repaints the page.
  */
 export default function ThemeControls() {
   const t = useSyncExternalStore(theme.subscribe, theme.get, theme.getServer);
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   const id = useId();
-  const dark = t.mode === "dark";
 
   // Close on a click outside or Escape, and hand focus back to the swatch.
   useEffect(() => {
@@ -43,47 +41,6 @@ export default function ThemeControls() {
 
   return (
     <div ref={box} className="relative flex items-center gap-1.5">
-      <button
-        type="button"
-        onClick={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          theme.toggleFrom(r.left + r.width / 2, r.top + r.height / 2);
-        }}
-        aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-        data-cursor={dark ? "Light" : "Dark"}
-        className="border-ink-faint hover:border-ink grid h-8 w-8 place-items-center rounded-full border transition-colors"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          aria-hidden="true"
-        >
-          {dark ? (
-            <>
-              <circle cx="12" cy="12" r="4.2" />
-              {Array.from({ length: 8 }, (_, i) => {
-                const a = (i * Math.PI) / 4;
-                return (
-                  <line
-                    key={i}
-                    x1={(12 + Math.cos(a) * 7).toFixed(2)}
-                    y1={(12 + Math.sin(a) * 7).toFixed(2)}
-                    x2={(12 + Math.cos(a) * 9.5).toFixed(2)}
-                    y2={(12 + Math.sin(a) * 9.5).toFixed(2)}
-                    strokeLinecap="round"
-                  />
-                );
-              })}
-            </>
-          ) : (
-            <path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10Z" />
-          )}
-        </svg>
-      </button>
-
       <button
         type="button"
         data-swatch
@@ -129,7 +86,7 @@ export default function ThemeControls() {
               >
                 <span
                   className="h-6 w-6 rounded-full"
-                  style={{ background: dark ? a.dark : a.light }}
+                  style={{ background: a.color }}
                 />
               </button>
             );

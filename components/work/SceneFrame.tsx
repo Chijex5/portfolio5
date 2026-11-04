@@ -31,9 +31,12 @@ export const useCamera = () => useContext(CameraContext);
 export default function SceneFrame({
   children,
   className,
+  tone = "screen",
 }: {
   children: React.ReactNode;
   className?: string;
+  /** A dark device (product UI), or plain paper (diagrams). */
+  tone?: "screen" | "paper";
 }) {
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
@@ -85,10 +88,15 @@ export default function SceneFrame({
   }, [camera]);
 
   return (
-    // A dark screen set into the paper — see `.screen` in globals.css.
+    // A dark screen set into the paper (see `.screen` in globals.css), or a
+    // sheet of the paper itself.
     <div
       ref={box}
-      className={`screen bg-paper relative overflow-hidden rounded-[clamp(14px,1.4vw,22px)] shadow-[0_40px_90px_-40px_rgba(26,18,13,0.55)] ${className ?? ""}`}
+      className={`relative overflow-hidden rounded-[clamp(14px,1.4vw,22px)] ${
+        tone === "screen"
+          ? "screen bg-paper shadow-[0_40px_90px_-40px_rgba(26,18,13,0.55)]"
+          : "bg-paper-raised border-ink-faint border"
+      } ${className ?? ""}`}
     >
       <div
         ref={inner}
