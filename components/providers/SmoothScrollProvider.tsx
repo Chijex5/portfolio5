@@ -4,17 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import { ReactLenis, useLenis, type LenisRef } from "lenis/react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { setLenis } from "@/lib/scroll";
-import { stage } from "@/lib/stage/stage";
 
 /**
- * Keeps ScrollTrigger in step with Lenis, and hands scroll speed to the particle
- * stage (fast scrolling stirs the particles up). Lives inside <ReactLenis> so it
- * can read the Lenis context.
+ * Keeps ScrollTrigger in step with Lenis. Lives inside <ReactLenis> so it can
+ * read the Lenis context.
  */
 function Bridge() {
-  const lenis = useLenis((l) => {
+  const lenis = useLenis(() => {
     ScrollTrigger.update();
-    stage.setVelocity(l.velocity);
   });
   useEffect(() => {
     setLenis(lenis ?? null);
@@ -25,12 +22,11 @@ function Bridge() {
 
 /**
  * Root smooth scroll. One loop for the whole site: Lenis's RAF is driven by the
- * GSAP ticker, which also drives the particle stage, so scroll, ScrollTrigger and
- * the canvas all advance on the same frame.
+ * GSAP ticker, so scroll, ScrollTrigger and every tween advance on the same
+ * frame.
  *
- * Under reduced motion Lenis stays mounted (so nothing below it remounts — the
- * stage canvas in particular must never be swapped out) but stops smoothing:
- * the wheel scrolls natively.
+ * Under reduced motion Lenis stays mounted (so nothing below it remounts) but
+ * stops smoothing: the wheel scrolls natively.
  */
 export default function SmoothScrollProvider({
   children,

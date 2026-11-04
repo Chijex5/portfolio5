@@ -4,9 +4,8 @@ import { useEffect, useRef } from "react";
 import { gsap } from "@/lib/gsap";
 import { intro } from "@/lib/intro";
 import { lockScroll } from "@/lib/scroll";
-import { stage } from "@/lib/stage/stage";
 
-/** Give up waiting on the stage after this and let the page in anyway. */
+/** Give up waiting on the fonts after this and let the page in anyway. */
 const GIVE_UP = 7;
 
 /**
@@ -14,8 +13,8 @@ const GIVE_UP = 7;
  * moment the browser parses it, before any of the app's JavaScript arrives.
  *
  * It counts on the frame clock, and each frame may only move it forward by
- * what 50ms would — so when the main thread stalls (the app booting, the
- * stage building its shapes), the count pauses and then carries on from
+ * what 50ms would — so when the main thread stalls (the app booting), the
+ * count pauses and then carries on from
  * where it was. It never leaps ahead to catch up, so every number is shown.
  * It eases a little as it nears 99, stops there, and publishes its state on
  * `window.__pl` for the component below, which stops it (\`stop\`), rolls
@@ -47,9 +46,9 @@ const STEP = 100 / REEL.length;
  * The count 00 → 99 is COUNT_SCRIPT above, running from the first parse.
  * This component only does the finish: once the count has reached 99 and
  * the page is ready, all three reels roll over from 99 to 100 together,
- * rest, and the exit plays — the labels and number
- * lift out, the paper wipes up with an accent band chasing it, and as it
- * clears the particles fly into "CJ." and the headline rises.
+ * rest, and the exit plays — the labels and number lift out, the paper
+ * wipes up with an accent band chasing it, and as it clears the hero name
+ * rises letter by letter and the headline follows.
  */
 export default function Preloader() {
   const root = useRef<HTMLDivElement>(null);
@@ -78,7 +77,13 @@ export default function Preloader() {
       }
     ).__pl;
     const counted = () => !pl || pl.done;
-    const ready = () => stage.ready || stage.failed;
+    // Ready once the faces are in: the hero name sizes itself to the page
+    // from real glyph widths, so it must not be measured in a fallback.
+    let fontsIn = false;
+    document.fonts.ready.then(() => {
+      fontsIn = true;
+    });
+    const ready = () => fontsIn;
 
     const leave = () => {
       if (done) return;
@@ -153,13 +158,11 @@ export default function Preloader() {
         },
         reduced ? "wipe" : "wipe+=0.12",
       );
-      // The page comes in as the wipe passes the middle of the screen: the
-      // particles start gathering and the headline starts to rise, so both
-      // land just after the screen is clear.
+      // The page comes in as the wipe passes the middle of the screen, so the
+      // hero lands just after the screen is clear.
       exit.add(
         () => {
           lockScroll(false);
-          stage.intro();
           intro.reveal();
         },
         reduced ? ">" : "wipe+=0.45",
@@ -232,6 +235,8 @@ export default function Preloader() {
                     reels.current[i] = el;
                   }}
                   className={`pl-reel pl-reel-${name} flex flex-col will-change-transform`}
+                  // COUNT_SCRIPT moves it before hydration, on purpose.
+                  suppressHydrationWarning
                 >
                   {REEL.map((d, k) => (
                     <span key={k} className="block h-[0.9em] leading-[0.9]">
@@ -255,6 +260,7 @@ export default function Preloader() {
               <span
                 ref={bar}
                 className="pl-bar bg-accent block h-full w-full origin-left"
+                suppressHydrationWarning
               />
             </span>
           </div>

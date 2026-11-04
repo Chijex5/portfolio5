@@ -27,11 +27,11 @@ const DEFAULT_ACCENT: AccentId = "jollof";
  * Runs in <head> before the page paints. Kept dependency-free and tiny; it
  * must agree with `read()` below on the storage format.
  */
-export const THEME_SCRIPT = `(function(){var d=document.documentElement,t={};try{t=JSON.parse(localStorage.getItem("${KEY}")||"{}")}catch(e){}var m=t.mode==="dark"||t.mode==="light"?t.mode:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");d.setAttribute("data-theme",m);d.setAttribute("data-accent",t.accent||"${DEFAULT_ACCENT}")})();`;
+export const THEME_SCRIPT = `(function(){var d=document.documentElement,t={};try{t=JSON.parse(localStorage.getItem("${KEY}")||"{}")}catch(e){}var m=t.mode==="light"?"light":"dark";d.setAttribute("data-theme",m);d.setAttribute("data-accent",t.accent||"${DEFAULT_ACCENT}")})();`;
 
 function read(): Theme {
   const d = document.documentElement;
-  const mode = d.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  const mode = d.getAttribute("data-theme") === "light" ? "light" : "dark";
   const a = d.getAttribute("data-accent");
   const accent = ACCENTS.some((x) => x.id === a)
     ? (a as AccentId)
@@ -40,7 +40,7 @@ function read(): Theme {
 }
 
 let current: Theme | null = null;
-const SERVER: Theme = { mode: "light", accent: DEFAULT_ACCENT };
+const SERVER: Theme = { mode: "dark", accent: DEFAULT_ACCENT };
 const listeners = new Set<() => void>();
 
 export const theme = {
@@ -54,7 +54,7 @@ export const theme = {
   },
   /**
    * Whether the last switch should snap rather than ease (it is being shown
-   * by a view transition instead). Read by the particle stage.
+   * by a view transition instead).
    */
   instant: false,
   set(next: Partial<Theme>, { instant = false } = {}) {

@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap";
 import { voltiq as copy } from "@/lib/scenes/voltiq";
-import { rng } from "@/lib/stage/shapes";
+import { rng } from "@/lib/rng";
 import { useCamera } from "../SceneFrame";
 import type { SceneProps } from "./types";
 import { count, Panel } from "./ui";
