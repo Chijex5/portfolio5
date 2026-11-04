@@ -235,12 +235,12 @@ export default function PicpressScene({ register }: SceneProps) {
   );
 
   return (
-    <div ref={root} className="text-bone relative h-full w-full text-[12px]">
+    <div ref={root} className="text-ink relative h-full w-full text-[12px]">
       {/* The app */}
       <Panel data-app className="top-[16px] left-0 h-[428px] w-[350px]">
         <div className="flex h-[50px] items-center justify-between px-4">
           <p className="text-[15px] font-medium tracking-[-0.01em]">PicPress</p>
-          <p className="label text-bone-muted text-[9px]">
+          <p className="label text-ink-muted text-[9px]">
             {copy.photos} photos
           </p>
         </div>
@@ -277,21 +277,21 @@ export default function PicpressScene({ register }: SceneProps) {
             </span>
           </div>
         ))}
-        <div className="bg-bone text-ink absolute right-4 bottom-4 left-4 grid h-[38px] place-items-center rounded-[9px] text-[12px] font-medium">
+        <div className="bg-ink text-paper absolute right-4 bottom-4 left-4 grid h-[38px] place-items-center rounded-[9px] text-[12px] font-medium">
           Make PDF
         </div>
       </Panel>
 
       {/* Size */}
       <Panel data-stats className="top-[110px] right-0 w-[220px] p-4">
-        <p className="label text-bone-muted text-[9px]">Total size</p>
+        <p className="label text-ink-muted text-[9px]">Total size</p>
         <p
           data-total
           className="mt-1 text-[34px] font-semibold tracking-[-0.04em] text-[#ff6a45] tabular-nums"
         >
           0 MB
         </p>
-        <span className="bg-bone-faint mt-3 block h-[5px] overflow-hidden rounded-full">
+        <span className="bg-ink-faint mt-3 block h-[5px] overflow-hidden rounded-full">
           <span
             data-bar
             className="block h-full w-full origin-left rounded-full bg-[#ff6a45]"
@@ -342,12 +342,12 @@ export default function PicpressScene({ register }: SceneProps) {
           PDF
         </span>
         <p className="mt-3 text-[15px] font-medium">{copy.file}</p>
-        <p className="text-bone-muted text-[11px] tabular-nums">
+        <p className="text-ink-muted text-[11px] tabular-nums">
           {copy.after.total} MB · 3 pages
         </p>
         <div
           data-send
-          className="bg-bone text-ink relative mt-4 grid h-[38px] place-items-center rounded-[9px] text-[12px] font-medium"
+          className="bg-ink text-paper relative mt-4 grid h-[38px] place-items-center rounded-[9px] text-[12px] font-medium"
         >
           <span data-send-label>Send</span>
           <span data-sent className="absolute">

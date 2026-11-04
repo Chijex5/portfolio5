@@ -13,7 +13,7 @@ export function isMobile(w: number) {
 }
 
 /**
- * The box structured shapes (schema, flow, surface) are drawn into, in stage
+ * The box the hero mark is placed against, in stage
  * coordinates (centre origin, y up). Desktop puts it right of centre so chapter
  * copy can own the bottom-left; phones put it in the upper part of the screen.
  */

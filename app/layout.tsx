@@ -1,35 +1,37 @@
 import type { Metadata, Viewport } from "next";
-import {
-  Instrument_Serif,
-  Inter_Tight,
-  JetBrains_Mono,
-} from "next/font/google";
+import { Anybody, DM_Mono, Instrument_Serif } from "next/font/google";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import Cursor from "@/components/shell/Cursor";
 import Hud from "@/components/shell/Hud";
 import Preloader from "@/components/shell/Preloader";
 import StageCanvas from "@/components/shell/StageCanvas";
+import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
-// The display face. The particle stage also sets "Say hello." in it, reading the
-// family back from this variable (lib/stage/stage.ts), so keep the name in step.
-const display = Inter_Tight({
+// The display face: one variable family whose width axis does the work — set
+// condensed for headlines, let out wide for the turn word. The particle stage
+// also sets "CJ" and "Say hello." in it, reading the family back from this
+// variable (lib/stage/stage.ts), so keep the name in step.
+const display = Anybody({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: "variable",
+  style: ["normal", "italic"],
+  axes: ["wdth"],
   variable: "--font-display-family",
   display: "swap",
 });
 
-// One italic word per chapter — the turn.
+// Only the wedding scene's invitation uses it — it is that product's face.
 const serif = Instrument_Serif({
   subsets: ["latin"],
   weight: "400",
   style: ["italic"],
   variable: "--font-serif-family",
   display: "swap",
+  preload: false,
 });
 
-const mono = JetBrains_Mono({
+const mono = DM_Mono({
   subsets: ["latin"],
   weight: ["400"],
   variable: "--font-mono-family",
@@ -46,7 +48,7 @@ const SITE_URL = process.env.VERCEL_PROJECT_PRODUCTION_URL
   : "http://localhost:3000";
 
 const DESCRIPTION =
-  "Chijioke Uzodinma is a full-stack developer in Lagos. Every product he has built started as an annoyance — this is how they get untangled.";
+  "Chijioke Uzodinma (CJ) is a full-stack developer who designs the data model, builds the API, and sweats the interface — from cohort platforms to storefronts.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -77,8 +79,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3eadb" },
+    { media: "(prefers-color-scheme: dark)", color: "#12100e" },
+  ],
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -93,21 +98,26 @@ export default function RootLayout({
       <head>
         {/* Before first paint: mark the document as scripted, which is what lets
             the preloader and the hero's pre-intro state exist at all (see
-            globals.css). Visitors without JS get the finished page. */}
+            globals.css), mark a repeat visit in this tab (a shorter count),
+            and apply the visitor's saved theme so it never flashes. Visitors without JS get the finished page, in light. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.setAttribute("data-js","");try{history.scrollRestoration="manual"}catch(e){}`,
+            __html: `document.documentElement.setAttribute("data-js","");try{history.scrollRestoration="manual"}catch(e){}try{var s=sessionStorage;if(s.getItem("seen")==="1")document.documentElement.setAttribute("data-seen","");s.setItem("seen","1")}catch(e){}${THEME_SCRIPT}`,
           }}
         />
       </head>
       <body className="min-h-dvh">
         <a
           href="#main"
-          className="label bg-signal text-ink fixed top-2 left-2 z-[110] -translate-y-24 px-3 py-2 focus:translate-y-0"
+          className="label bg-accent text-paper fixed top-2 left-2 z-[110] -translate-y-24 px-3 py-2 focus:translate-y-0"
         >
           Skip to content
         </a>
         <SmoothScrollProvider>
+          {/* First in the document, so it streams and paints before the page
+              under it does — the page is long, and anything later would let
+              the hero show first. */}
+          <Preloader />
           <StageCanvas />
           <Hud />
           {children}
@@ -116,7 +126,6 @@ export default function RootLayout({
             className="grain pointer-events-none fixed inset-0 z-50"
           />
           <Cursor />
-          <Preloader />
         </SmoothScrollProvider>
       </body>
     </html>

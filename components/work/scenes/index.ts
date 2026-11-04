@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { dfootprint } from "@/lib/scenes/dfootprint";
 import { jobless } from "@/lib/scenes/jobless";
 import { picpress } from "@/lib/scenes/picpress";
+import { riseclassroom } from "@/lib/scenes/riseclassroom";
 import { preciousAndEmmanuel } from "@/lib/scenes/precious-and-emmanuel";
 import type { SceneCopy } from "@/lib/scenes/types";
 import { voltiq } from "@/lib/scenes/voltiq";
@@ -10,6 +11,7 @@ import DfootprintScene from "./Dfootprint";
 import JoblessScene from "./Jobless";
 import PicpressScene from "./Picpress";
 import PreciousEmmanuelScene from "./PreciousEmmanuel";
+import RiseclassroomScene from "./Riseclassroom";
 import type { SceneProps } from "./types";
 import VoltiqScene from "./Voltiq";
 import WayframeScene from "./Wayframe";
@@ -18,6 +20,7 @@ export type Scene = { Component: ComponentType<SceneProps>; copy: SceneCopy };
 
 /** Project slug → its scene. Every project in lib/projects.ts has one. */
 export const SCENES: Partial<Record<string, Scene>> = {
+  riseclassroom: { Component: RiseclassroomScene, copy: riseclassroom },
   dfootprint: { Component: DfootprintScene, copy: dfootprint },
   voltiq: { Component: VoltiqScene, copy: voltiq },
   wayframe: { Component: WayframeScene, copy: wayframe },

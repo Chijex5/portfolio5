@@ -85,7 +85,11 @@ export default function SceneFrame({
   }, [camera]);
 
   return (
-    <div ref={box} className={`relative overflow-hidden ${className ?? ""}`}>
+    // A dark screen set into the paper — see `.screen` in globals.css.
+    <div
+      ref={box}
+      className={`screen bg-paper relative overflow-hidden rounded-[clamp(14px,1.4vw,22px)] shadow-[0_40px_90px_-40px_rgba(26,18,13,0.55)] ${className ?? ""}`}
+    >
       <div
         ref={inner}
         className="absolute top-1/2 left-1/2 origin-center"

@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
-import LocalTime from "@/components/shared/LocalTime";
+import { Fragment, useEffect, useRef } from "react";
 import { chapter } from "@/lib/chapter";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 import { intro } from "@/lib/intro";
@@ -10,24 +9,23 @@ import { CONTACT, SOCIAL_LINKS } from "@/lib/nav";
 import { projects } from "@/lib/projects";
 import { getLenis, lockScroll, recallStory, rememberStory } from "@/lib/scroll";
 import { stage, type ShapeId } from "@/lib/stage/stage";
+import EmailLink from "@/components/shared/EmailLink";
+import SectionTitle from "@/components/story/SectionTitle";
 import ProjectChapter from "@/components/work/ProjectChapter";
+import WorkIndex from "@/components/work/WorkIndex";
 import { SCENES } from "@/components/work/scenes";
 
 /**
- * The home page: one story told in eight beats, drawn by the particle stage.
+ * The home page, drawn over the particle stage:
  *
- *   hero     a knot           — every product starts as an annoyance
- *   noise    it comes undone  — the annoyances themselves
- *   shape    a schema         — first, the data
- *   flow     a live graph     — then the wiring
- *   surface  browser + phone  — then the part people touch
- *   proof    six scenes       — what came out of it, each acted out
- *   me       a Lagos sunset   — who
- *   hello    "Say hello."     — the ask
+ *   hero     "CJ."         — who, what, and how to reach him
+ *   work     quiet field   — each project acted out
+ *   about    quiet field   — stack, what he's on now, GitHub activity
+ *   hello    "Say hello."  — the ask
  *
- * Each chapter is a tall section with a sticky, screen-high inner. Scrolling
- * into a section morphs the stage from the previous chapter's shape to this one;
- * scrolling through it holds the shape while its copy reads. The stage is driven
+ * The hero, work and hello hold the screen while their section scrolls
+ * past; about reads like a normal page. Scrolling into a section morphs the
+ * stage from the previous section's shape to this one. The stage is driven
  * from one function of scroll position (`update`), so jumping anywhere — an
  * anchor, a reload mid-page, scrolling backwards — always lands on the right
  * picture.
@@ -43,21 +41,45 @@ type Beat = {
 };
 
 const BEATS: readonly Beat[] = [
-  { id: "top", shape: "knot", index: "00", label: "Intro", vh: 1 },
-  { id: "noise", shape: "noise", index: "01", label: "Noise", vh: 2.3 },
-  { id: "shape", shape: "schema", index: "02", label: "Shape", vh: 1.8 },
-  { id: "flow", shape: "flow", index: "03", label: "Flow", vh: 1.8 },
-  { id: "surface", shape: "surface", index: "04", label: "Surface", vh: 1.8 },
+  { id: "top", shape: "cj", index: "00", label: "Intro", vh: 1 },
   // The projects carry this chapter themselves; the stage drops to a quiet
   // field behind them. Its height is the sum of the project chapters.
-  { id: "work", shape: "field", index: "05", label: "Proof", vh: 0 },
-  { id: "me", shape: "calm", index: "06", label: "Me", vh: 1.8 },
-  { id: "contact", shape: "hello", index: "07", label: "Hello", vh: 1.6 },
+  { id: "work", shape: "field", index: "01", label: "Work", vh: 0 },
+  // Natural height: it is read, not scrubbed.
+  { id: "about", shape: "field", index: "02", label: "About", vh: 0 },
+  { id: "contact", shape: "hello", index: "03", label: "Hello", vh: 1.6 },
 ];
 
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
 
-export default function Story() {
+/** What CJ is on right now. */
+const NOW = [
+  { label: "Building", value: "Rise Classroom" },
+  { label: "Learning", value: "Risevest Academy" },
+  { label: "Studied", value: "Statistics, University of Nigeria" },
+  { label: "Based", value: "Lagos · remote" },
+] as const;
+
+const MARQUEE = [
+  "Got something worth building?",
+  "I'm listening",
+  "Got something worth building?",
+  "I'm listening",
+] as const;
+
+const STACK = [
+  { group: "Frontend", items: ["React", "Next.js", "TypeScript", "Tailwind"] },
+  { group: "Mobile", items: ["React Native"] },
+  { group: "Backend", items: ["Python", "FastAPI"] },
+  { group: "Data", items: ["PostgreSQL", "MongoDB"] },
+] as const;
+
+export default function Story({
+  activity,
+}: {
+  /** The GitHub activity block, rendered on the server. */
+  activity?: React.ReactNode;
+}) {
   const root = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const busy = useRef(false);
@@ -92,7 +114,7 @@ export default function Story() {
         while (i > 0 && y < tops[i] - vh) i--;
 
         if (i === 0) {
-          stage.set("knot", "knot", 1);
+          stage.set("cj", "cj", 1);
         } else {
           const prev = BEATS[i - 1];
           const beat = BEATS[i];
@@ -157,6 +179,17 @@ export default function Story() {
         return;
       }
 
+      // The accent word's signature: it arrives squeezed and lets itself out
+      // to full width (the display face's width axis). Split lines are
+      // measured at the final width, so the word only ever grows into room
+      // that is already there.
+      const stretch = (word: Element) =>
+        gsap.fromTo(
+          word,
+          { fontStretch: "56%" },
+          { fontStretch: "128%", duration: 1.5, ease: "expo.out" },
+        );
+
       // Hero: plays once, as the preloader leaves.
       const hero = sections[0];
       const heroTitle = hero.querySelector<HTMLElement>("[data-hero-title]")!;
@@ -170,7 +203,9 @@ export default function Story() {
       const offIntro = intro.onReveal(() => {
         heroPlayed = true;
         const ls = heroTitle.querySelectorAll(".split-line");
-        const d = returning ? 0.15 : 0.9;
+        // The preloader calls this as its wipe passes mid-screen; a short
+        // delay lets the headline rise into the space the wipe just cleared.
+        const d = returning ? 0.15 : 0.3;
         gsap.to(ls, {
           yPercent: 0,
           duration: 1.4,
@@ -178,6 +213,9 @@ export default function Story() {
           stagger: 0.12,
           delay: d,
         });
+        heroTitle
+          .querySelectorAll(".turn")
+          .forEach((w) => stretch(w).delay(d + 0.45));
         gsap.to(heroBits, {
           autoAlpha: 1,
           y: 0,
@@ -188,33 +226,64 @@ export default function Story() {
         });
       });
 
-      // Chapter headings: in as the chapter lands, back out if you scroll back.
+      // Headings: lines rise out of their masks, then the accent word
+      // stretches. Back out if you scroll back above them.
       gsap.utils.toArray<HTMLElement>("[data-reveal]", el).forEach((t) => {
-        const section = t.closest("section")!;
-        lines(t, (ls) =>
-          gsap.from(ls, {
+        lines(t, (ls) => {
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: t,
+              start: "top 85%",
+              toggleActions: "play none none reverse",
+            },
+          });
+          tl.from(ls, {
             yPercent: 115,
             duration: 1.2,
             ease: "expo.out",
             stagger: 0.09,
-            scrollTrigger: {
-              trigger: section,
-              start: "top 28%",
-              toggleActions: "play none none reverse",
-            },
-          }),
-        );
+          });
+          t.querySelectorAll(".turn").forEach((w) => tl.add(stretch(w), 0.35));
+          return tl;
+        });
       });
+
+      // Section titles: letter by letter, each rising and widening into
+      // place, the outlined echoes trailing behind (below).
+      gsap.utils.toArray<HTMLElement>("[data-chars]", el).forEach((t) => {
+        SplitText.create(t, {
+          type: "chars",
+          mask: "chars",
+          autoSplit: true,
+          onSplit: (self) =>
+            gsap.fromTo(
+              self.chars,
+              { yPercent: 105, fontStretch: "40%" },
+              {
+                yPercent: 0,
+                fontStretch: "64%",
+                duration: 1.1,
+                ease: "expo.out",
+                stagger: 0.045,
+                scrollTrigger: {
+                  trigger: t,
+                  start: "top 88%",
+                  toggleActions: "play none none reverse",
+                },
+              },
+            ),
+        });
+      });
+
       gsap.utils.toArray<HTMLElement>("[data-fade]", el).forEach((t) => {
         gsap.from(t, {
           autoAlpha: 0,
           y: 16,
           duration: 1,
           ease: "expo.out",
-          delay: 0.25,
           scrollTrigger: {
-            trigger: t.closest("section")!,
-            start: "top 28%",
+            trigger: t,
+            start: "top 90%",
             toggleActions: "play none none reverse",
           },
         });
@@ -238,27 +307,117 @@ export default function Story() {
         });
       });
 
-      // Noise: the annoyances pile up one at a time as you hold in the chapter.
-      const noise = sections[1];
-      gsap.utils
-        .toArray<HTMLElement>("[data-annoyance]", noise)
-        .forEach((t, i) => {
-          gsap.fromTo(
-            t,
-            { yPercent: 110 },
+      // Section titles: the outlined echoes fan out below the word as it
+      // comes up the screen, and fold back if you scroll back.
+      gsap.utils.toArray<HTMLElement>("[data-echo]", el).forEach((echo) => {
+        const k = Number(echo.dataset.echo);
+        gsap.fromTo(
+          echo,
+          { yPercent: 0, autoAlpha: 0 },
+          {
+            yPercent: k * 26,
+            autoAlpha: 1,
+            ease: "none",
+            scrollTrigger: {
+              trigger: echo.closest("[data-title]")!,
+              start: "top 85%",
+              end: "top 35%",
+              scrub: 0.6,
+            },
+          },
+        );
+      });
+
+      // The year fills in, week by week, and the total counts up to it.
+      const heat = el.querySelector<HTMLElement>("[data-heat]");
+      if (heat) {
+        const total = el.querySelector<HTMLElement>("[data-total]");
+        const to = Number(total?.textContent?.replace(/\D/g, "") || 0);
+        const n = { v: 0 };
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: heat,
+            start: "top 85%",
+            toggleActions: "play none none reverse",
+          },
+        });
+        tl.from(heat.querySelectorAll("[data-cell]"), {
+          scale: 0,
+          autoAlpha: 0,
+          duration: 0.4,
+          ease: "back.out(2)",
+          stagger: { each: 0.0022 },
+        });
+        if (total)
+          tl.fromTo(
+            n,
+            { v: 0 },
             {
-              yPercent: 0,
+              v: to,
+              duration: 1.6,
               ease: "power2.out",
-              scrollTrigger: {
-                trigger: noise,
-                start: () =>
-                  `top+=${window.innerHeight * (i * 0.32 - 0.55)} top`,
-                end: () => `top+=${window.innerHeight * (i * 0.32 - 0.3)} top`,
-                scrub: 0.6,
+              onUpdate: () => {
+                total.textContent = Math.round(n.v).toLocaleString("en");
               },
             },
+            0,
           );
+      }
+
+      // The ask, scrolling: drifts on its own, rushes and leans with the
+      // scroll, then settles back.
+      const track = el.querySelector<HTMLElement>("[data-marquee]");
+      if (track) {
+        const loop = gsap.to(track, {
+          xPercent: -50,
+          duration: 32,
+          ease: "none",
+          repeat: -1,
         });
+        // Start deep into the loop so scrolling back up can run it backwards.
+        loop.totalTime(32 * 50);
+        const lean = gsap.quickTo(track, "skewX", {
+          duration: 0.5,
+          ease: "power3",
+        });
+        ScrollTrigger.create({
+          trigger: track,
+          start: "top bottom",
+          end: "bottom top",
+          onUpdate: (self) => {
+            const v = self.getVelocity();
+            const boost = 1 + Math.min(Math.abs(v) / 300, 5);
+            gsap.to(loop, {
+              timeScale: self.direction * boost,
+              duration: 0.2,
+              overwrite: true,
+            });
+            gsap.to(loop, {
+              timeScale: self.direction,
+              duration: 1.2,
+              delay: 0.25,
+              ease: "power2.out",
+            });
+            lean(gsap.utils.clamp(-8, 8, -v / 250));
+            gsap.delayedCall(0.2, () => lean(0));
+          },
+        });
+      }
+
+      // About is a normal page: each block fades up as it reaches the screen.
+      gsap.utils.toArray<HTMLElement>("[data-rise]", el).forEach((t) => {
+        gsap.from(t, {
+          autoAlpha: 0,
+          y: 24,
+          duration: 1,
+          ease: "expo.out",
+          scrollTrigger: {
+            trigger: t,
+            start: "top 88%",
+            toggleActions: "play none none reverse",
+          },
+        });
+      });
 
       return () => {
         offIntro();
@@ -303,86 +462,86 @@ export default function Story() {
           <p
             data-intro
             data-hero-bit
-            className="label text-bone-muted mb-6 md:mb-8"
+            className="label text-ink-muted mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 md:mb-8"
           >
-            {CONTACT.name} <span className="text-signal">/</span> {CONTACT.role}
+            <span>
+              {CONTACT.name} <span className="text-accent">/</span>{" "}
+              {CONTACT.role}
+            </span>
+            {CONTACT.available && (
+              <span className="border-accent text-accent inline-flex -rotate-3 items-center gap-2 border px-2 py-1">
+                <span className="bg-accent h-1.5 w-1.5 animate-pulse rounded-full" />
+                Open to work · Freelance
+              </span>
+            )}
           </p>
           <h1
             data-intro
             data-hero-title
-            className="display max-w-[14ch] text-[clamp(2.9rem,7.6vw,9.5rem)] md:max-w-[17ch]"
+            className="display max-w-[12ch] text-[clamp(3.2rem,7.6vw,9.5rem)]"
           >
-            Every product I&rsquo;ve built started as an{" "}
-            <em className="turn">annoyance.</em>
+            I build web products people actually <em className="turn">use.</em>
           </h1>
+          <p
+            data-intro
+            data-hero-bit
+            className="text-ink-muted mt-6 max-w-[42ch] text-[clamp(1.05rem,1.3vw,1.25rem)] leading-snug tracking-[-0.01em] md:mt-8"
+          >
+            Full-stack, from the database to the button. Learns fast, cooks
+            badly.
+          </p>
+          <div
+            data-intro
+            data-hero-bit
+            className="mt-7 flex flex-wrap items-center gap-3 md:mt-9"
+          >
+            <a
+              href="#work"
+              className="bg-ink text-paper hover:bg-accent rounded-full px-5 py-3 text-[0.95rem] tracking-[-0.01em] transition-colors"
+            >
+              See the work
+            </a>
+            <a
+              href={`mailto:${CONTACT.email}`}
+              className="border-ink-faint hover:border-ink rounded-full border px-5 py-3 text-[0.95rem] tracking-[-0.01em] transition-colors"
+            >
+              Email me
+            </a>
+          </div>
         </div>
         <p
           data-intro
           data-hero-bit
-          className="label text-bone-muted absolute right-4 bottom-20 hidden items-center gap-3 md:right-10 md:bottom-24 md:flex"
+          className="label text-ink-muted absolute right-4 bottom-20 hidden items-center gap-3 md:right-10 md:bottom-24 md:flex"
         >
-          Scroll to untangle
-          <span className="bg-bone-faint relative block h-8 w-px overflow-hidden">
-            <span className="bg-signal absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
+          Scroll, it&rsquo;s worth it
+          <span className="bg-ink-faint relative block h-8 w-px overflow-hidden">
+            <span className="bg-accent absolute inset-x-0 top-0 h-1/2 animate-[drip_1.8s_ease-in-out_infinite]" />
           </span>
         </p>
       </section>
 
-      {/* 01 — Noise --------------------------------------------------------- */}
-      <Chapter id="noise" vh={BEATS[1].vh}>
-        <Eyebrow index="01" label="Noise" />
-        <h2 className="sr-only">What I keep running into</h2>
-        <ul className="display space-y-[0.12em] text-[clamp(2rem,4.4vw,5.25rem)] md:w-[60vw]">
-          {[
-            "A job hunt across five boards.",
-            "A wedding with a deadline.",
-            "Screens I forgot to design.",
-          ].map((t) => (
-            <li key={t} className="line-mask">
-              <span data-annoyance className="block">
-                {t}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Chapter>
-
-      {/* 02 — Shape --------------------------------------------------------- */}
-      <Chapter id="shape" vh={BEATS[2].vh}>
-        <Eyebrow index="02" label="Shape" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          So I give it <em className="turn">shape.</em>
-        </h2>
-        <p data-fade className="label text-bone-muted mt-6">
-          Schema first — tables, keys, relations.
-        </p>
-      </Chapter>
-
-      {/* 03 — Flow ---------------------------------------------------------- */}
-      <Chapter id="flow" vh={BEATS[3].vh}>
-        <Eyebrow index="03" label="Flow" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          Then I wire it <em className="turn">up.</em>
-        </h2>
-        <p data-fade className="label text-bone-muted mt-6">
-          APIs, payments, queues, email.
-        </p>
-      </Chapter>
-
-      {/* 04 — Surface ------------------------------------------------------- */}
-      <Chapter id="surface" vh={BEATS[4].vh}>
-        <Eyebrow index="04" label="Surface" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          And make it feel <em className="turn">obvious.</em>
-        </h2>
-        <p data-fade className="label text-bone-muted mt-6">
-          Web and mobile, React to React Native.
-        </p>
-      </Chapter>
-
-      {/* 05 — Proof: each project acts itself out ------------------------ */}
-      <section id="work" className="relative">
-        <h2 className="sr-only">Selected work</h2>
+      {/* 01 — Work: each project acts itself out ------------------------- */}
+      <section id="work" aria-labelledby="work-title" className="relative">
+        <div className="grid gap-y-10 px-4 pt-32 pb-16 md:grid-cols-12 md:gap-x-10 md:px-10 md:pt-48 md:pb-24">
+          <div className="md:col-span-5">
+            <SectionTitle
+              id="work-title"
+              word="Work"
+              index="01"
+              label={`Selected work (${String(projects.length).padStart(2, "0")})`}
+            />
+            <p
+              data-rise
+              className="text-ink-muted mt-6 max-w-[34ch] text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em] md:mt-10"
+            >
+              Things I built because something annoyed me, or someone asked
+              nicely. Scroll and each one plays out, or skip to the one you came
+              for.
+            </p>
+          </div>
+          <WorkIndex className="border-ink-faint self-end border-t md:col-span-7 md:col-start-6" />
+        </div>
         {projects.map((p, i) => {
           const scene = SCENES[p.slug];
           if (!scene) return null;
@@ -399,47 +558,152 @@ export default function Story() {
         })}
       </section>
 
-      {/* 06 — Me ------------------------------------------------------------ */}
-      <Chapter id="me" vh={BEATS[6].vh} top>
-        <Eyebrow index="06" label="Me" />
-        <h2 data-reveal className="display text-[clamp(2.6rem,6.6vw,7.5rem)]">
-          I&rsquo;m <em className="turn">Chijioke.</em>
-        </h2>
-        <dl
-          data-fade
-          className="label mt-8 grid max-w-xl grid-cols-[auto_1fr] gap-x-8 gap-y-3 md:mt-10"
-        >
-          <dt className="text-bone-muted">Based</dt>
-          <dd>
-            {CONTACT.location}, <LocalTime />
-          </dd>
-          <dt className="text-bone-muted">Now</dt>
-          <dd>{CONTACT.current}</dd>
-          <dt className="text-bone-muted">Studied</dt>
-          <dd>{CONTACT.studied}</dd>
-          <dt className="text-bone-muted">Stack</dt>
-          <dd>React · Next.js · TypeScript · Python · Postgres</dd>
-        </dl>
-      </Chapter>
+      {/* 02 — About ------------------------------------------------------- */}
+      <section
+        id="about"
+        aria-labelledby="about-title"
+        className="relative px-4 pt-32 pb-24 md:px-10 md:pt-48 md:pb-40"
+      >
+        <div className="grid gap-y-6 md:grid-cols-12 md:items-end md:gap-x-10">
+          <div className="md:col-span-5">
+            <SectionTitle
+              id="about-title"
+              word="About"
+              index="02"
+              label="Who"
+            />
+          </div>
+          <p
+            data-reveal
+            className="display max-w-[18ch] pb-[0.5em] text-[clamp(2.2rem,4.2vw,4.75rem)] md:col-span-7 md:col-start-6"
+          >
+            I like owning the whole picture — schema, API, and the{" "}
+            <em className="turn">interface.</em>
+          </p>
+        </div>
+        <div className="mt-14 grid gap-x-10 gap-y-14 md:mt-20 md:grid-cols-12">
+          <div
+            data-rise
+            className="text-ink-muted space-y-5 text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em] md:col-span-6"
+          >
+            <p>
+              I&rsquo;m Chijioke, though most people call me{" "}
+              <span className="text-ink">CJ</span>. I design the data, wire up
+              the API, and sweat the interface until it feels obvious.
+            </p>
+            <p>
+              I learn fast: new tool on Monday, shipping with it by Friday. I do
+              the maths in my head (slowly, but correctly), and I care about
+              performance, honest copy and interfaces that get out of the way.
+            </p>
+            <p>
+              Away from the keyboard, I&rsquo;ll know a song&rsquo;s lyrics
+              after two plays, give you a nickname you didn&rsquo;t ask for, and
+              lose any cooking contest you enter me in.
+            </p>
+          </div>
+          <dl
+            data-rise
+            className="grid grid-cols-[auto_1fr] content-start gap-x-8 gap-y-4 md:col-span-5 md:col-start-8"
+          >
+            {NOW.map((n) => (
+              <Fragment key={n.label}>
+                <dt className="label text-ink-muted pt-1">{n.label}</dt>
+                <dd className="text-[1.05rem] tracking-[-0.01em]">{n.value}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </div>
 
-      {/* 07 — Hello --------------------------------------------------------- */}
+        <div className="mt-20 md:mt-28">
+          <SectionTitle word="Stack" />
+          <p
+            data-rise
+            className="text-ink-muted max-w-[44ch] text-[clamp(1.05rem,1.35vw,1.3rem)] leading-snug tracking-[-0.01em]"
+          >
+            What I reach for first. I&rsquo;ll pick up whatever the job actually
+            needs.
+          </p>
+          <ul className="border-ink-faint mt-6 grid grid-cols-2 border-t md:mt-10 md:grid-cols-4">
+            {STACK.map((g) => (
+              <li
+                key={g.group}
+                data-rise
+                className="border-ink-faint hover:bg-paper-raised border-b py-6 transition-colors duration-500 max-md:odd:border-r max-md:odd:pr-4 max-md:even:pl-4 md:border-r md:px-6 md:py-8 md:last:border-r-0"
+              >
+                <p className="label text-accent">{g.group}</p>
+                <ul className="mt-4 space-y-1.5">
+                  {g.items.map((item) => (
+                    <li
+                      key={item}
+                      className="text-[clamp(1.15rem,1.6vw,1.5rem)] tracking-[-0.02em]"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {activity && (
+          <div data-rise className="mt-20 md:mt-28">
+            {activity}
+          </div>
+        )}
+      </section>
+
+      {/* The ask, scrolling ------------------------------------------------ */}
+      <a
+        href={`mailto:${CONTACT.email}`}
+        data-cursor="Write"
+        aria-label={`Email ${CONTACT.email}`}
+        className="border-ink-faint group relative block overflow-hidden border-y py-6 md:py-8"
+      >
+        <span data-marquee className="flex w-max">
+          {[0, 1].map((copy) => (
+            <span
+              key={copy}
+              aria-hidden="true"
+              className="display flex shrink-0 items-center text-[clamp(3rem,8vw,7.5rem)] whitespace-nowrap"
+            >
+              {MARQUEE.map((t, i) => (
+                <span key={i} className="flex items-center">
+                  <span
+                    className={
+                      i % 2
+                        ? "outline-text group-hover:text-accent transition-colors duration-500"
+                        : "group-hover:text-accent transition-colors duration-500"
+                    }
+                  >
+                    {t}
+                  </span>
+                  <span className="text-accent mx-[0.35em] text-[0.5em]">
+                    ✦
+                  </span>
+                </span>
+              ))}
+            </span>
+          ))}
+        </span>
+      </a>
+
+      {/* 03 — Hello --------------------------------------------------------- */}
       <section
         id="contact"
         className="relative"
-        style={{ height: `${BEATS[7].vh * 100}svh` }}
+        style={{ height: `${BEATS[3].vh * 100}svh` }}
       >
         <div className="sticky top-0 flex h-svh flex-col justify-end px-4 pb-20 md:px-10 md:pb-24">
           <h2 className="sr-only">Say hello</h2>
           <div className="flex flex-col items-center text-center">
-            <a
-              data-fade
-              href={`mailto:${CONTACT.email}`}
-              data-cursor="Write"
-              className="group relative text-[clamp(1.35rem,3.4vw,3.25rem)] tracking-[-0.03em]"
-            >
-              {CONTACT.email}
-              <span className="bg-signal absolute -bottom-1 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-700 ease-[var(--ease-out-expo)] group-hover:scale-x-100" />
-            </a>
+            <p data-fade className="label text-ink-muted mb-6 max-w-[40ch]">
+              {CONTACT.status}
+            </p>
+            <div data-fade>
+              <EmailLink email={CONTACT.email} />
+            </div>
             <ul
               data-fade
               className="label mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3"
@@ -450,7 +714,7 @@ export default function Story() {
                     href={s.href}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="hover:text-signal transition-colors"
+                    className="hover:text-accent transition-colors"
                   >
                     {s.label} ↗
                   </a>
@@ -461,67 +725,27 @@ export default function Story() {
                   href={CONTACT.writing}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="hover:text-signal transition-colors"
+                  className="hover:text-accent transition-colors"
                 >
                   Writing ↗
                 </a>
               </li>
             </ul>
           </div>
-          <p className="label text-bone-muted mt-14 hidden justify-center md:flex">
-            © {new Date().getFullYear()} {CONTACT.name}
-          </p>
+          <footer className="label text-ink-muted mt-14 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+            <span>
+              © {new Date().getFullYear()} {CONTACT.name}
+            </span>
+            <span className="hidden md:inline">
+              Designed &amp; built by CJ, with Next.js, GSAP, WebGL and too much
+              curiosity
+            </span>
+            <a href="#top" className="hover:text-accent transition-colors">
+              Back to top ↑
+            </a>
+          </footer>
         </div>
       </section>
     </div>
-  );
-}
-
-function Chapter({
-  id,
-  vh,
-  top,
-  children,
-}: {
-  id: string;
-  vh: number;
-  /** Copy at the top of the screen instead of the bottom. */
-  top?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <section id={id} className="relative" style={{ height: `${vh * 100}svh` }}>
-      <div className="sticky top-0 h-svh">
-        <div
-          data-exit
-          className={
-            top
-              ? "absolute inset-x-4 top-24 md:inset-x-10 md:top-32"
-              : "absolute inset-x-4 bottom-20 md:inset-x-10 md:bottom-24 md:max-w-[52vw]"
-          }
-        >
-          {children}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Eyebrow({
-  index,
-  label,
-  children,
-}: {
-  index: string;
-  label: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <p data-fade className="label mb-5 flex items-center md:mb-7">
-      <span className="text-signal">({index})</span>
-      <span className="bg-bone-faint mx-3 h-px w-8" />
-      <span className="text-bone-muted">{label}</span>
-      {children}
-    </p>
   );
 }

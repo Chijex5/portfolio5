@@ -197,7 +197,7 @@ export default function PreciousEmmanuelScene({ register }: SceneProps) {
 
   const [a, b] = copy.couple;
   return (
-    <div ref={root} className="text-bone relative h-full w-full text-[12px]">
+    <div ref={root} className="text-ink relative h-full w-full text-[12px]">
       {/* Invitation */}
       <div
         data-invite
@@ -241,8 +241,8 @@ export default function PreciousEmmanuelScene({ register }: SceneProps) {
       {/* RSVP */}
       <Panel data-rsvp className="top-[60px] left-[300px] w-[290px] p-5">
         <p className="font-serif text-[24px] italic">Will you be there?</p>
-        <p className="label text-bone-muted mt-4 text-[9px]">Your name</p>
-        <div className="border-bone-faint mt-1.5 flex h-[34px] items-center rounded-[8px] border px-3 text-[13px]">
+        <p className="label text-ink-muted mt-4 text-[9px]">Your name</p>
+        <div className="border-ink-faint mt-1.5 flex h-[34px] items-center rounded-[8px] border px-3 text-[13px]">
           <span data-guest className="whitespace-nowrap">
             {copy.guest.name}
           </span>
@@ -250,23 +250,23 @@ export default function PreciousEmmanuelScene({ register }: SceneProps) {
         <div className="mt-3 grid grid-cols-2 gap-2">
           <span
             data-yes
-            className="border-bone-faint grid h-[34px] place-items-center rounded-[8px] border text-[12px] font-medium"
+            className="border-ink-faint grid h-[34px] place-items-center rounded-[8px] border text-[12px] font-medium"
           >
             Joyfully yes
           </span>
-          <span className="border-bone-faint text-bone-muted grid h-[34px] place-items-center rounded-[8px] border text-[12px]">
+          <span className="border-ink-faint text-ink-muted grid h-[34px] place-items-center rounded-[8px] border text-[12px]">
             Sadly no
           </span>
         </div>
-        <p className="label text-bone-muted mt-4 text-[9px]">Plus one</p>
-        <div className="border-bone-faint mt-1.5 flex h-[34px] items-center rounded-[8px] border px-3 text-[13px]">
+        <p className="label text-ink-muted mt-4 text-[9px]">Plus one</p>
+        <div className="border-ink-faint mt-1.5 flex h-[34px] items-center rounded-[8px] border px-3 text-[13px]">
           <span data-plus className="whitespace-nowrap">
             {copy.guest.plusOne}
           </span>
         </div>
         <div
           data-send
-          className="bg-bone text-ink mt-5 grid h-[40px] place-items-center rounded-[9px] text-[12px] font-medium"
+          className="bg-ink text-paper mt-5 grid h-[40px] place-items-center rounded-[9px] text-[12px] font-medium"
         >
           Send RSVP
         </div>
@@ -332,30 +332,30 @@ export default function PreciousEmmanuelScene({ register }: SceneProps) {
 
       {/* The couple's view */}
       <Panel data-dash className="top-[40px] left-[60px] w-[480px] p-6">
-        <p className="label text-bone-muted text-[9px]">Guest list · live</p>
+        <p className="label text-ink-muted text-[9px]">Guest list · live</p>
         <p className="mt-2 text-[44px] font-semibold tracking-[-0.04em] tabular-nums">
           <span data-attending>168</span>
-          <span className="text-bone-muted text-[22px]">
+          <span className="text-ink-muted text-[22px]">
             {" "}
             / {copy.attending.capacity} attending
           </span>
         </p>
-        <span className="bg-bone-faint mt-3 block h-[6px] overflow-hidden rounded-full">
+        <span className="bg-ink-faint mt-3 block h-[6px] overflow-hidden rounded-full">
           <span
             data-fill
-            className="bg-signal block h-full w-full origin-left rounded-full"
+            className="bg-accent block h-full w-full origin-left rounded-full"
           />
         </span>
-        <p className="label text-bone-muted mt-6 text-[9px]">Just in</p>
+        <p className="label text-ink-muted mt-6 text-[9px]">Just in</p>
         <ul className="mt-2">
           {copy.recent.map((g, i) => (
             <li
               key={g}
               data-recent
-              className="border-bone-faint flex items-center justify-between border-b py-2.5 text-[13px] last:border-0"
+              className="border-ink-faint flex items-center justify-between border-b py-2.5 text-[13px] last:border-0"
             >
               <span>{g}</span>
-              <span className="text-bone-muted text-[11px]">
+              <span className="text-ink-muted text-[11px]">
                 {i === 0 ? "just now" : `${i * 4} min ago`}
               </span>
             </li>

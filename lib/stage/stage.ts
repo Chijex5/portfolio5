@@ -1,19 +1,9 @@
 import { gsap } from "@/lib/gsap";
+import { theme } from "@/lib/theme";
 import { isMobile } from "./layout";
 import { fill, program, texture, upload, type Uniforms } from "./gl";
 import { fragmentShader, vertexShader } from "./shaders";
-import {
-  calm,
-  field,
-  flow,
-  hello,
-  knot,
-  noise,
-  schema,
-  seed,
-  surface,
-  type ShapeData,
-} from "./shapes";
+import { cj, field, hello, seed, type ShapeData } from "./shapes";
 
 /**
  * The particle stage: one fixed, full-screen WebGL canvas that the whole site
@@ -26,16 +16,7 @@ import {
  * scrolls. The stage never reads scroll itself.
  */
 
-export type ShapeId =
-  | "seed"
-  | "knot"
-  | "noise"
-  | "schema"
-  | "flow"
-  | "surface"
-  | "calm"
-  | "hello"
-  | "field";
+export type ShapeId = "seed" | "cj" | "field" | "hello";
 
 type Slot = { pos: WebGLTexture; col: WebGLTexture; data: ShapeData };
 
@@ -82,6 +63,8 @@ class Stage {
     uDpr: { type: "f", value: 1 },
     uCamZ: { type: "f", value: 1 },
     uMotion: { type: "f", value: 1 },
+    uInk: { type: "v3", value: [0.1, 0.07, 0.05] },
+    uAccent: { type: "v3", value: [0.72, 0.2, 0.1] },
     uMouse: { type: "v2", value: [99999, 99999] },
     uMouseR: { type: "f", value: 130 },
     uMouseF: { type: "f", value: 0 },
@@ -189,16 +172,20 @@ class Stage {
     this.u.uTexW.value = this.tw;
 
     this.size();
+    this.paint();
+    theme.subscribe(this.paint);
     this.report(0.1);
 
-    // The display face, for "Say hello." next/font hashes the family name, so it
-    // is read back from the CSS variable rather than hard-coded.
+    // The face "CJ." and "Say hello." are set in. next/font hashes the family
+    // name, so it is read back from the CSS variable rather than hard-coded.
     const fam = getComputedStyle(document.documentElement)
       .getPropertyValue(DISPLAY_VAR)
       .trim();
     if (fam) this.family = fam;
-    const fontReady = document.fonts
-      .load(`600 100px ${this.family}`)
+    const fontReady = Promise.all([
+      document.fonts.load(`italic 900 100px ${this.family}`),
+      document.fonts.load(`900 100px ${this.family}`),
+    ])
       .catch(() => undefined)
       .then(() => this.report(this.progress + 0.1));
 
@@ -262,13 +249,8 @@ class Stage {
     const { n, w, h } = this;
     return [
       () => this.slot("seed", seed(n)),
-      () => this.slot("knot", knot(n, w, h)),
-      () => this.slot("noise", noise(n, w, h)),
-      () => this.slot("schema", schema(n, w, h)),
-      () => this.slot("flow", flow(n, w, h)),
-      () => this.slot("surface", surface(n, w, h)),
+      () => this.slot("cj", cj(n, w, h, this.family)),
       () => this.slot("field", field(n, w, h)),
-      () => this.slot("calm", calm(n, w, h)),
       () => this.slot("hello", hello(n, w, h, this.family)),
     ];
   }
@@ -276,6 +258,35 @@ class Stage {
   private build() {
     this.steps().forEach((step) => step());
   }
+
+  /**
+   * Take ink and accent from the theme tokens. The shapes only store which
+   * of the two each dot is (see shapes.ts), so this is the whole repaint.
+   */
+  private paint = () => {
+    const css = getComputedStyle(document.documentElement);
+    const to = this.u;
+    const ink = rgb(css.getPropertyValue("--ink"));
+    const accent = rgb(css.getPropertyValue("--accent"));
+    if (!ink || !accent) return;
+    // Ease over with the page's own colour transition.
+    const from = {
+      i: [...(to.uInk.value as number[])],
+      a: [...(to.uAccent.value as number[])],
+    };
+    const t = { k: 0 };
+    gsap.to(t, {
+      k: 1,
+      // Snap when a view transition is showing the switch instead.
+      duration: this.ready && !theme.instant ? 0.5 : 0,
+      ease: "power1.out",
+      overwrite: true,
+      onUpdate: () => {
+        to.uInk.value = mix3(from.i, ink, t.k);
+        to.uAccent.value = mix3(from.a, accent, t.k);
+      },
+    });
+  };
 
   /** Push the current from/to/mix into the uniforms. */
   private apply() {
@@ -325,7 +336,7 @@ class Stage {
 
   /**
    * The first-load intro: every particle starts at one point and flies to the
-   * hero knot. Returns the tween so the caller can sequence copy against it.
+   * hero "CJ." Returns the tween so the caller can sequence copy against it.
    */
   intro() {
     this.introduced = true;
@@ -385,9 +396,10 @@ class Stage {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(this.prog);
     gl.bindVertexArray(this.vao!);
-    // Premultiplied output, added: dense areas glow.
+    // Premultiplied "over": ink laid on paper, so dense areas print darker
+    // rather than glowing.
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.ONE, gl.ONE);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     upload(gl, this.prog, this.u, this.locations);
     gl.drawArrays(gl.POINTS, 0, this.n);
   };
@@ -457,6 +469,22 @@ class Stage {
     this.mouse.last = 0;
     this.mouse.tx = this.mouse.ty = this.mouse.x = this.mouse.y = -99999;
   };
+}
+
+/** "#rrggbb" → [r, g, b] in 0–1; null for anything else. */
+function rgb(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const v = parseInt(m[1], 16);
+  return [(v >> 16) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+}
+
+function mix3(a: number[], b: number[], k: number): [number, number, number] {
+  return [
+    a[0] + (b[0] - a[0]) * k,
+    a[1] + (b[1] - a[1]) * k,
+    a[2] + (b[2] - a[2]) * k,
+  ];
 }
 
 /** Hand the main thread back between chunks of work. */

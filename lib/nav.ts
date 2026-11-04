@@ -7,6 +7,7 @@ export type NavLink = { href: string; label: string };
 
 export const NAV_LINKS: readonly NavLink[] = [
   { href: "/#work", label: "Work" },
+  { href: "/#about", label: "About" },
   { href: "/#contact", label: "Contact" },
 ];
 
@@ -29,8 +30,7 @@ export const CONTACT = {
   /** Drives the header/hero local clock. */
   timeZone: "Africa/Lagos",
   available: true,
-  /** "Currently" and "studied" — the only CV the home page carries. */
-  current: "Transfer pricing, EY Nigeria",
-  studied: "Statistics, University of Nigeria",
+  /** The line over the email: where CJ is, and what he is open to. */
+  status: "Hiring, or building something? Both work.",
   writing: "https://chijioke.app",
 } as const;

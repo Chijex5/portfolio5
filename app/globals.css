@@ -1,27 +1,130 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ *
- * Tokens. Dark ink, bone type, one vermilion signal — the same three
- * colours the particle stage draws with (lib/stage/shapes.ts).
+ * Tokens. Ink on rice-cream paper by day, cream on charcoal by night, and
+ * one accent the visitor picks (lib/theme.ts). The particle stage reads
+ * --ink and --accent back from here, so keep them plain hex.
  * ------------------------------------------------------------------ */
 :root {
-  --ink: #0a0a0a;
-  --ink-raised: #141312;
-  --bone: #ede8df;
-  --bone-muted: color-mix(in oklab, var(--bone) 56%, transparent);
-  --bone-faint: color-mix(in oklab, var(--bone) 16%, transparent);
-  --signal: #ff4a1c;
+  --paper: #f3eadb;
+  --paper-raised: #ebdfca;
+  --ink: #1a120d;
+  --ink-muted: color-mix(in oklab, var(--ink) 62%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 16%, transparent);
+  --accent: #b8321a;
+  /* The device the project scenes sit in. */
+  --screen: #0f0c0a;
+  --screen-edge: transparent;
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --paper: #12100e;
+  --paper-raised: #1b1815;
+  --ink: #ede6da;
+  --ink-muted: color-mix(in oklab, var(--ink) 58%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 14%, transparent);
+  --screen: #0a0908;
+  --screen-edge: color-mix(in oklab, #ede6da 10%, transparent);
 
   color-scheme: dark;
 }
 
+:root[data-accent="jollof"] {
+  --accent: #b8321a;
+}
+:root[data-theme="dark"][data-accent="jollof"] {
+  --accent: #ff5a36;
+}
+:root[data-accent="plantain"] {
+  --accent: #9a6106;
+}
+:root[data-theme="dark"][data-accent="plantain"] {
+  --accent: #f2b13c;
+}
+:root[data-accent="indigo"] {
+  --accent: #4338ca;
+}
+:root[data-theme="dark"][data-accent="indigo"] {
+  --accent: #a094ff;
+}
+:root[data-accent="forest"] {
+  --accent: #1d7048;
+}
+:root[data-theme="dark"][data-accent="forest"] {
+  --accent: #4cc98c;
+}
+:root[data-accent="mono"] {
+  --accent: #1a120d;
+}
+:root[data-theme="dark"][data-accent="mono"] {
+  --accent: #f3eadb;
+}
+
+/* The circular light/dark switch (theme.toggleFrom): the new page grows out
+   of the button over the old one, with no default crossfade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  z-index: 1;
+}
+
+/* Only while a switch is happening (lib/theme.ts adds and removes it). */
+:root.theme-anim,
+:root.theme-anim *,
+:root.theme-anim *::before,
+:root.theme-anim *::after {
+  transition:
+    background-color 0.5s ease,
+    border-color 0.5s ease,
+    color 0.5s ease,
+    fill 0.5s ease !important;
+}
+
+/* A screen set into the page: the project scenes are product UI, and product
+   UI lives on a dark device. Inside, the tokens flip to light-on-dark, so
+   scene code reads `text-ink` and gets the screen's ink. Every token that is
+   derived from another is redeclared, because custom properties inherit as
+   already-resolved values. The accent keeps the visitor's pick. */
+.screen {
+  --paper: var(--screen);
+  --paper-raised: #1a1613;
+  --ink: #ede8df;
+  --ink-muted: color-mix(in oklab, var(--ink) 56%, transparent);
+  --ink-faint: color-mix(in oklab, var(--ink) 16%, transparent);
+
+  color: var(--ink);
+  color-scheme: dark;
+  box-shadow: inset 0 0 0 1px var(--screen-edge);
+}
+/* Screens are always dark, so they take each accent's dark-mode value. */
+:root[data-accent="jollof"] .screen {
+  --accent: #ff5a36;
+}
+:root[data-accent="plantain"] .screen {
+  --accent: #f2b13c;
+}
+:root[data-accent="indigo"] .screen {
+  --accent: #a094ff;
+}
+:root[data-accent="forest"] .screen {
+  --accent: #4cc98c;
+}
+:root[data-accent="mono"] .screen {
+  --accent: #f3eadb;
+}
+
 @theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
   --color-ink: var(--ink);
-  --color-ink-raised: var(--ink-raised);
-  --color-bone: var(--bone);
-  --color-bone-muted: var(--bone-muted);
-  --color-bone-faint: var(--bone-faint);
-  --color-signal: var(--signal);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-accent: var(--accent);
 
   --font-display: var(--font-display-family), system-ui, sans-serif;
   --font-serif: var(--font-serif-family), Georgia, serif;
@@ -54,12 +157,12 @@ html.is-locked {
  * ------------------------------------------------------------------ */
 html {
   scroll-padding-top: 0;
-  background: var(--ink);
+  background: var(--paper);
 }
 
 body {
-  background: var(--ink);
-  color: var(--bone);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -70,12 +173,12 @@ body {
 }
 
 ::selection {
-  background: var(--signal);
-  color: var(--ink);
+  background: var(--accent);
+  color: var(--paper);
 }
 
 :focus-visible {
-  outline: 1px solid var(--signal);
+  outline: 1px solid var(--accent);
   outline-offset: 4px;
 }
 
@@ -93,21 +196,30 @@ body {
  * ------------------------------------------------------------------ */
 .display {
   font-family: var(--font-display);
-  font-weight: 500;
-  letter-spacing: -0.045em;
-  line-height: 0.9;
+  font-weight: 800;
+  /* Anybody, squeezed: hand-painted shop-sign proportions rather than the
+     neutral grotesk every template ships with. */
+  font-stretch: 64%;
+  letter-spacing: -0.012em;
+  line-height: 0.86;
 }
 
-/* The one word per chapter that carries the turn. */
+/* The one word per chapter that carries the turn: the same face, let out wide
+   and slanted, in accent. */
 .turn {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-style: italic;
-  font-weight: 400;
-  letter-spacing: -0.02em;
-  color: var(--signal);
-  /* Instrument Serif sits small next to the grotesk at the same size. */
-  font-size: 1.08em;
-  padding-right: 0.04em;
+  font-weight: 700;
+  font-stretch: 128%;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  padding-right: 0.06em;
+}
+
+/* An echo of a heading: just its outline. */
+.outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--ink-faint);
 }
 
 .label {
@@ -154,7 +266,12 @@ body {
  * ------------------------------------------------------------------ */
 .grain {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
-  opacity: 0.05;
+  opacity: 0.16;
+  mix-blend-mode: multiply;
+}
+:root[data-theme="dark"] .grain {
+  opacity: 0.07;
+  mix-blend-mode: screen;
 }
 
 /* ------------------------------------------------------------------ *
@@ -176,6 +293,19 @@ html[data-js] .preloader {
     opacity: 0;
     visibility: hidden;
   }
+}
+
+/* The count's reels: the tens and hundreds slide to each new digit; the units
+   change too often to animate (the counter itself is the inline script in
+   Preloader.tsx). */
+.pl-reel {
+  transition: transform 0.45s var(--ease-out-expo);
+}
+.pl-reel-units {
+  transition: none;
+}
+.pl-bar {
+  transform: scaleX(0);
 }
 
 /* No pre-intro hiding is needed for the hero: with JS the preloader covers it

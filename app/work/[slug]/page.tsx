@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 type Params = { params: Promise<{ slug: string }> };
 
-/** Every case study is known at build time, so all six prerender. */
+/** Every case study is known at build time, so all of them prerender. */
 export function generateStaticParams() {
   return projects.map((project) => ({ slug: project.slug }));
 }
@@ -76,9 +76,9 @@ function Block({ block }: { block: CaseStudyBlock }) {
         data-split
         className="display mt-20 max-w-[18ch] text-[clamp(2rem,4.6vw,4.5rem)] md:mt-28"
       >
-        <span className="text-signal">“</span>
+        <span className="text-accent">“</span>
         {block.body}
-        <span className="text-signal">”</span>
+        <span className="text-accent">”</span>
       </p>
     );
   }
@@ -90,7 +90,7 @@ function Block({ block }: { block: CaseStudyBlock }) {
           {block.heading}
         </h2>
       ) : null}
-      <p className="text-bone/75 text-[1.125rem] leading-[1.6] tracking-[-0.01em] text-pretty md:text-xl">
+      <p className="text-ink/75 text-[1.125rem] leading-[1.6] tracking-[-0.01em] text-pretty md:text-xl">
         {block.body}
       </p>
     </div>
@@ -111,7 +111,7 @@ function Outbound({
       href={href}
       target="_blank"
       rel="noreferrer noopener"
-      className="group hover:text-signal inline-flex items-center gap-2 transition-colors"
+      className="group hover:text-accent inline-flex items-center gap-2 transition-colors"
     >
       {label}
       <span className="sr-only"> for {title}</span>
@@ -134,7 +134,7 @@ export default async function CaseStudy({ params }: Params) {
   const total = String(projects.length).padStart(2, "0");
 
   return (
-    <main id="main" className="bg-ink relative z-10">
+    <main id="main" className="bg-paper relative z-10">
       <CaseScene
         slug={project.slug}
         index={project.index}
@@ -145,14 +145,14 @@ export default async function CaseStudy({ params }: Params) {
         <article className="px-4 pt-10 pb-24 md:px-10 md:pt-16 md:pb-36">
           <p
             data-rise
-            className="label text-bone-muted flex flex-wrap items-center gap-x-3 gap-y-1"
+            className="label text-ink-muted flex flex-wrap items-center gap-x-3 gap-y-1"
           >
-            <span className="text-signal">
+            <span className="text-accent">
               ({project.index}/{total})
             </span>
-            <span className="bg-bone-faint h-px w-8" />
+            <span className="bg-ink-faint h-px w-8" />
             {project.category}
-            <span className="bg-bone-faint h-px w-8" />
+            <span className="bg-ink-faint h-px w-8" />
             {project.year}
           </p>
 
@@ -177,7 +177,7 @@ export default async function CaseStudy({ params }: Params) {
               className="label flex flex-col gap-8 md:col-span-4 md:col-start-9"
             >
               <div>
-                <p className="text-bone-muted mb-3">Built with</p>
+                <p className="text-ink-muted mb-3">Built with</p>
                 <ul className="flex flex-wrap gap-x-4 gap-y-2">
                   {project.tags.map((tag) => (
                     <li key={tag}>{tag}</li>
@@ -218,20 +218,20 @@ export default async function CaseStudy({ params }: Params) {
           {/* The real thing, after the story of it. */}
           {project.cover ? (
             <figure data-rise className="mt-24 md:mt-36">
-              <figcaption className="label text-bone-muted mb-4 flex justify-between">
+              <figcaption className="label text-ink-muted mb-4 flex justify-between">
                 <span>The live site</span>
                 {project.live ? (
                   <a
                     href={project.live}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="hover:text-bone transition-colors"
+                    className="hover:text-ink transition-colors"
                   >
                     Visit ↗
                   </a>
                 ) : null}
               </figcaption>
-              <div className="border-bone-faint relative aspect-[16/11] overflow-hidden rounded-[14px] border">
+              <div className="border-ink-faint relative aspect-[16/11] overflow-hidden rounded-[14px] border">
                 <Image
                   src={project.cover.src}
                   alt={project.cover.alt}
@@ -247,11 +247,11 @@ export default async function CaseStudy({ params }: Params) {
         {/* Next project */}
         <nav
           aria-label="Next project"
-          className="border-bone-faint border-t px-4 pt-10 pb-28 md:px-10 md:pt-14 md:pb-32"
+          className="border-ink-faint border-t px-4 pt-10 pb-28 md:px-10 md:pt-14 md:pb-32"
         >
-          <div className="label text-bone-muted flex justify-between">
+          <div className="label text-ink-muted flex justify-between">
             <span>Next project</span>
-            <Link href="/#work" className="hover:text-bone transition-colors">
+            <Link href="/#work" className="hover:text-ink transition-colors">
               ← All work
             </Link>
           </div>
@@ -262,7 +262,7 @@ export default async function CaseStudy({ params }: Params) {
           >
             <span
               data-split
-              className="display group-hover:text-signal block text-[clamp(3rem,10vw,11rem)] transition-colors duration-500"
+              className="display group-hover:text-accent block text-[clamp(3rem,10vw,11rem)] transition-colors duration-500"
             >
               {next.title}
             </span>
@@ -273,10 +273,10 @@ export default async function CaseStudy({ params }: Params) {
               →
             </span>
           </Link>
-          <p className="label text-bone-muted mt-16 md:mt-24">
+          <p className="label text-ink-muted mt-16 md:mt-24">
             <a
               href={`mailto:${CONTACT.email}`}
-              className="hover:text-bone transition-colors"
+              className="hover:text-ink transition-colors"
             >
               {CONTACT.email}
             </a>

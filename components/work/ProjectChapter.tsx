@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRef } from "react";
-import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/gsap";
 import type { Project } from "@/lib/types";
 import SceneFrame from "./SceneFrame";
 import type { Scene } from "./scenes";
@@ -81,6 +81,42 @@ export default function ProjectChapter({
         );
       });
 
+      if (!reduced) {
+        // The screen opens upward as the chapter arrives, like a new scene.
+        gsap.fromTo(
+          el.querySelector(".screen"),
+          { clipPath: "inset(100% 0% 0% 0% round 22px)" },
+          {
+            clipPath: "inset(0% 0% 0% 0% round 22px)",
+            ease: "none",
+            scrollTrigger: {
+              trigger: el,
+              start: "top bottom",
+              end: "top 15%",
+              scrub: 0.5,
+            },
+          },
+        );
+        // And the name types itself in, a letter at a time.
+        const name = el.querySelector<HTMLElement>("[data-name]");
+        if (name)
+          SplitText.create(name, {
+            type: "chars",
+            autoSplit: true,
+            onSplit: (self) =>
+              gsap.from(self.chars, {
+                autoAlpha: 0,
+                duration: 0.01,
+                stagger: 0.04,
+                scrollTrigger: {
+                  trigger: el,
+                  start: "top 45%",
+                  toggleActions: "play none none reverse",
+                },
+              }),
+          });
+      }
+
       ScrollTrigger.create({
         trigger: el,
         // The first step builds while the chapter scrolls into place.
@@ -96,6 +132,7 @@ export default function ProjectChapter({
   return (
     <section
       ref={root}
+      id={`work-${project.slug}`}
       aria-labelledby={`project-${project.slug}`}
       className="relative"
       style={{ height: `${chapterVh(steps.length) * 100}svh` }}
@@ -110,9 +147,9 @@ export default function ProjectChapter({
 
         <div className="row-start-2 flex flex-col justify-end md:col-span-5 md:col-start-1 md:row-start-1">
           <p className="label mb-4 flex items-center md:mb-6">
-            <span className="text-signal">(05)</span>
-            <span className="bg-bone-faint mx-3 h-px w-8" />
-            <span className="text-bone-muted">
+            <span className="text-accent">(01)</span>
+            <span className="bg-ink-faint mx-3 h-px w-8" />
+            <span className="text-ink-muted">
               {String(index + 1).padStart(2, "0")} /{" "}
               {String(total).padStart(2, "0")}
             </span>
@@ -126,16 +163,16 @@ export default function ProjectChapter({
               onNavigate={onOpen}
               data-cursor="Case study"
             >
-              {project.title}
+              <span data-name>{project.title}</span>
             </Link>
           </h2>
-          <p className="text-bone-muted mt-3 max-w-[30ch] text-[clamp(1rem,1.3vw,1.2rem)] leading-snug tracking-[-0.01em] md:mt-4">
+          <p className="text-ink-muted mt-3 max-w-[30ch] text-[clamp(1rem,1.3vw,1.2rem)] leading-snug tracking-[-0.01em] md:mt-4">
             {project.line}
           </p>
 
-          <div className="border-bone-faint mt-6 border-t pt-5 md:mt-10 md:pt-6">
-            <p className="label text-bone-muted flex items-center gap-3">
-              <span className="text-bone tabular-nums">
+          <div className="border-ink-faint mt-6 border-t pt-5 md:mt-10 md:pt-6">
+            <p className="label text-ink-muted flex items-center gap-3">
+              <span className="text-ink tabular-nums">
                 <span data-step-count>01</span> /{" "}
                 {String(steps.length).padStart(2, "0")}
               </span>
@@ -151,7 +188,7 @@ export default function ProjectChapter({
                   <p className="text-[clamp(1.3rem,1.9vw,1.8rem)] font-medium tracking-[-0.03em]">
                     {s.title}
                   </p>
-                  <p className="text-bone-muted mt-1.5 max-w-[42ch] text-[0.95rem] leading-snug">
+                  <p className="text-ink-muted mt-1.5 max-w-[42ch] text-[0.95rem] leading-snug">
                     {s.body}
                   </p>
                 </li>

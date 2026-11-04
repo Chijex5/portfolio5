@@ -11,8 +11,40 @@ import type { Project } from "@/lib/types";
  */
 export const projects: readonly Project[] = [
   {
-    slug: "dfootprint",
+    slug: "riseclassroom",
     index: "01",
+    title: "Rise Classroom",
+    category: "EdTech",
+    year: 2026,
+    line: "Google Classroom and Slack stop being enough the day you add mentors.",
+    blurb:
+      "A learning platform for running tech cohorts: onboarding, mentor groups, attendance, assignments, and the students who've gone quiet, all in one place.",
+    tags: ["Next.js", "TypeScript", "Learning platform", "Dashboards"],
+    cover: {
+      src: "/images/work/riseclassroom.webp",
+      alt: 'The Rise Classroom home page: "Where better learning takes shape." above a tilted dashboard showing Cohort 2026.',
+      width: 2400,
+      height: 1650,
+    },
+    live: "https://rise-classroom-frontend.netlify.app",
+    blocks: [
+      {
+        kind: "text",
+        body: "Ever tried to start a tech cohort? You think: Google Classroom for the work, Slack for the talking. Then you add mentors, and you want to see how each of them is doing with their students.",
+      },
+      {
+        kind: "text",
+        body: "You want to notice the students who've stopped showing up and ask them what's wrong. You want attendance and assignment submissions in one place, and onboarding that doesn't mean adding thirty people by hand.",
+      },
+      {
+        kind: "quote",
+        body: "That's what Rise Classroom is: the whole cohort, in one room.",
+      },
+    ],
+  },
+  {
+    slug: "dfootprint",
+    index: "02",
     title: "D'Footprint",
     category: "E-commerce",
     year: 2026,
@@ -41,7 +73,7 @@ export const projects: readonly Project[] = [
   },
   {
     slug: "voltiq",
-    index: "02",
+    index: "03",
     title: "VoltIq",
     category: "Civic tech",
     year: 2026,
@@ -73,7 +105,7 @@ export const projects: readonly Project[] = [
   },
   {
     slug: "wayframe",
-    index: "03",
+    index: "04",
     title: "Wayframe",
     category: "AI tooling",
     year: 2026,
@@ -105,7 +137,7 @@ export const projects: readonly Project[] = [
   },
   {
     slug: "jobless",
-    index: "04",
+    index: "05",
     title: "Jobless",
     category: "Tooling",
     year: 2026,
@@ -137,7 +169,7 @@ export const projects: readonly Project[] = [
   },
   {
     slug: "picpress",
-    index: "05",
+    index: "06",
     title: "PicPress",
     category: "Utility",
     year: 2026,
@@ -170,7 +202,7 @@ export const projects: readonly Project[] = [
   },
   {
     slug: "precious-and-emmanuel",
-    index: "06",
+    index: "07",
     title: "Precious & Emmanuel",
     category: "Client project",
     year: 2026,
